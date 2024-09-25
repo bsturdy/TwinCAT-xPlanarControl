@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="xPlanarProgram" Id="{5f53017b-87c3-461b-8337-82487cd68e06}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM xPlanarProgram
+VAR
+	Control			: xPlanarControl;
+	State			: BYTE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+Control.CyclicUpdate();
+
+IF Control.DetectErrors() THEN
+	State := 99;
+END_IF
+
+CASE State OF
+	
+	0:
+		IF Control.EnableMovers() THEN
+			State := 1;
+		ELSE
+			State := 99;
+		END_IF
+		
+	1:
+		IF Control.Home() THEN
+			State := 2;
+		END_IF
+		
+	2:
+		IF Control.SwapPlaces() THEN
+			State := 3;
+		END_IF	
+		
+	3:
+		IF Control.FollowTileEdge() THEN
+			State := 4;
+		END_IF
+		
+	4:
+		IF Control.VaryMoverHeight() THEN
+			State := 5;
+		END_IF
+		
+	5:
+		IF Control.Spin() THEN
+			State := 6;
+		END_IF
+		
+	6:
+		IF Control.Tilt() THEN
+			State := 1;
+		END_IF
+			
+	99:
+		IF Control.ResetErrors() THEN
+			State := 0;
+		END_IF	
+	
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="xPlanarProgram">
+      <LineId Id="19" Count="1" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="13" Count="2" />
+      <LineId Id="17" Count="1" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="31" Count="4" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="38" Count="17" />
+      <LineId Id="57" Count="4" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="27" Count="3" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="10" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

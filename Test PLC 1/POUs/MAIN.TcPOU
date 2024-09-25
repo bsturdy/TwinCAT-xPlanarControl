@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{92246147-67ee-43d2-9056-44db244479e8}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	Running				: BYTE;
+	TimeAlive			: TON;
+	TimeAliveSeconds	: INT;
+	po	: xPlanarControl;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+Running := Running + 1;
+
+TimeAlive(IN := NOT TimeAlive.Q, PT := T#1S);
+IF TimeAlive.Q THEN
+	TimeAliveSeconds := TimeAliveSeconds + 1;
+END_IF
+
+xPlanarNormalSequence();
+
+CoeToPlc();
+po();]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="181" Count="0" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="192" Count="2" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="202" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

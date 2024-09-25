@@ -16,10 +16,10 @@
 * xPlanarControl function block has references internally that link to the mover objects. These need to be linked in the NC. Once this link has been made inside of the NC, the methods can be called to control the axis. The function block does not need to be called directly
 * Calling CyclicUpdate() every cycle is required. This method updates the internal state of the function block
 * Include libraries for access to functions that are used internally.: 
-- Tc3_Mc3PlanarMotion, 
-- Tc3_Physics, 
-- Tc3_XPlanarStandard, 
-- Tc3_XPlanarUtility
+    - Tc3_Mc3PlanarMotion, 
+    - Tc3_Physics, 
+    - Tc3_XPlanarStandard, 
+    - Tc3_XPlanarUtility
 
 ## Who do I talk to? ##
 

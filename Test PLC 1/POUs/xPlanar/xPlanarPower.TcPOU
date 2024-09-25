@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="xPlanarPower" Id="{c74e6ded-70f6-4dde-a622-675725c54072}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK xPlanarPower
+VAR_INPUT
+	TriggerEnable	: BOOL;
+	TriggerDisable	: BOOL;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	Running			: BYTE;
+	
+	i				: BYTE;
+	State			: BYTE;
+	CommandDone		: BOOL;
+	
+	EnableDone		: BOOL;
+	DisableDone		: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+Running := Running + 1;
+
+EnableMovers();
+
+DisableMovers();
+
+ReadPowerStatus();
+
+]]></ST>
+    </Implementation>
+    <Method Name="DisableMovers" Id="{e7dd4c1b-e93a-42af-bc89-25e44ea8a2fb}">
+      <Declaration><![CDATA[METHOD DisableMovers : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF TriggerDisable THEN
+	
+	EnableDone := FALSE;
+
+	CASE State OF
+		
+		0:
+			TriggerDisable := FALSE;
+			
+			FOR i := 1 TO xPlanarLink.MoverCount DO
+				xPlanarLink.PlanarMover[i].Disable(xPlanarLink.PlanarFeedback[i]);
+			END_FOR
+			State := 1;
+		
+		1:
+			FOR i := 1 TO xPlanarLink.MoverCount DO
+				CommandDone := xPlanarLink.PlanarFeedback[i].Done;
+			END_FOR
+			
+			IF CommandDone THEN
+				CommandDone := FALSE;
+				State := 2;
+			END_IF
+		
+		2:
+			DisableDone := TRUE;
+	
+	END_CASE
+
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="EnableMovers" Id="{c0071bb0-05f7-42e7-bc56-2ba89d9785b0}">
+      <Declaration><![CDATA[METHOD EnableMovers : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF TriggerEnable THEN
+
+	DisableDone := FALSE;	
+	
+	CASE State OF
+		
+		0:
+			TriggerEnable := FALSE;
+			
+			FOR i := 1 TO xPlanarLink.MoverCount DO
+				xPlanarLink.PlanarMover[i].Enable(xPlanarLink.PlanarFeedback[i]);
+			END_FOR
+			State := 1;
+		
+		1:
+			FOR i := 1 TO xPlanarLink.MoverCount DO
+				CommandDone := xPlanarLink.PlanarFeedback[i].Done;
+			END_FOR
+			
+			IF CommandDone THEN
+				CommandDone := FALSE;
+				State := 2;
+			END_IF
+		
+		2:
+			EnableDone := TRUE;
+	
+	END_CASE
+
+END_IF
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ReadPowerStatus" Id="{7a51f4b8-99c5-4291-a1f9-55d97ad18f46}">
+      <Declaration><![CDATA[METHOD ReadPowerStatus : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+FOR i := 1 TO xPlanarLink.MoverCount DO
+	
+	IF xPlanarLink.PlanarMover[i].MCTOPLC.STD.State = 3 THEN
+		EnableDone := TRUE;
+		DisableDone := FALSE;
+	ELSE
+		DisableDone := TRUE;
+		EnableDone := FALSE;
+	END_IF
+
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="xPlanarPower">
+      <LineId Id="17" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="28" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="22" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarPower.DisableMovers">
+      <LineId Id="33" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="41" Count="16" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarPower.EnableMovers">
+      <LineId Id="46" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="52" Count="1" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="54" Count="16" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarPower.ReadPowerStatus">
+      <LineId Id="6" Count="4" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="11" Count="1" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

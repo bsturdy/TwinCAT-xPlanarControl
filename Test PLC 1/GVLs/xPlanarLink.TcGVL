@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="xPlanarLink" Id="{63ea0029-0d4d-4677-b4e5-a6a483590362}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	PlanarMover			: ARRAY [1..MoverCount] OF MC_PlanarMover;
+	PlanarFeedback		: ARRAY [1..MoverCount] OF MC_PlanarFeedback;
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	MoverCount			: BYTE := 2;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

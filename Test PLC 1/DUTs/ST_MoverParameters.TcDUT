@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_MoverParameters" Id="{3e7b82a8-967a-419a-a371-61c476bf1951}">
+    <Declaration><![CDATA[TYPE ST_MoverParameters :
+STRUCT
+	slogMessage			:	STRING;
+	targetPosition		:	PositionXYC;
+	Constraints			:	DynamicConstraint_PathXY;
+	Options				:	ST_MoveToPositionOptions;
+	rotateOptions		:	ST_MoveCOptions;
+	rotateSetPosition	: 	LREAL;
+	joinTrackOptions	:	ST_JoinTrackOptions;
+	leaveTrackOptions	:	ST_LeaveTrackOptions;
+	extPosModeOptions	:	MC_EXTERNAL_SET_POSITION_MODE;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

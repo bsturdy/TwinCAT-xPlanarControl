@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="CoeToPlc" Id="{2ac5fc48-d93e-4f17-aaae-55a029d58a6e}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM CoeToPlc
+VAR
+	CoeTrigger		: TON;
+	CoeTriggerTime	: TIME := T#50MS;
+	
+	TileTemp1		: FB_EcCoESdoRead;
+	Temperature1	: WORD;
+	TileTemp2		: FB_EcCoESdoRead;
+	Temperature2	: WORD;
+			
+	FanSpeed1		: FB_EcCoESdoRead;
+	Speed1			: BYTE;
+	FanSpeed2		: FB_EcCoESdoRead;
+	Speed2			: BYTE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+CoeTrigger(IN := NOT(CoeTrigger.Q), PT := CoeTriggerTime);
+
+
+TileTemp1
+(
+    sNetId     := '192.168.5.90.7.1',
+    nSlaveAddr := 1001,
+    nIndex     := 16#FA00,
+    nSubIndex  := 25,
+    pDstBuf    := ADR(Temperature1),
+    cbBufLen   := SIZEOF(Temperature1),
+    bExecute   := CoeTrigger.Q
+);
+
+TileTemp2
+(
+    sNetId     := '192.168.5.90.7.1',
+    nSlaveAddr := 1003,
+    nIndex     := 16#FA00,
+    nSubIndex  := 25,
+    pDstBuf    := ADR(Temperature2),
+    cbBufLen   := SIZEOF(Temperature2),
+    bExecute   := CoeTrigger.Q
+);
+
+FanSpeed1
+(
+    sNetId     := '192.168.5.90.7.1',
+    nSlaveAddr := 1001,
+    nIndex     := 16#FA00,
+    nSubIndex  := 28,
+    pDstBuf    := ADR(Speed1),
+    cbBufLen   := SIZEOF(Speed1),
+    bExecute   := CoeTrigger.Q
+);
+
+FanSpeed2
+(
+    sNetId     := '192.168.5.90.7.1',
+    nSlaveAddr := 1003,
+    nIndex     := 16#FA00,
+    nSubIndex  := 28,
+    pDstBuf    := ADR(Speed2),
+    cbBufLen   := SIZEOF(Speed2),
+    bExecute   := CoeTrigger.Q
+);]]></ST>
+    </Implementation>
+    <LineIds Name="CoeToPlc">
+      <LineId Id="70" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="7" Count="9" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="32" Count="9" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="49" Count="20" />
+      <LineId Id="48" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
