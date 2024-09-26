@@ -6,7 +6,7 @@ VAR
 	Running				: BYTE;
 	TimeAlive			: TON;
 	TimeAliveSeconds	: INT;
-	po	: xPlanarControl;
+
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -18,10 +18,10 @@ IF TimeAlive.Q THEN
 	TimeAliveSeconds := TimeAliveSeconds + 1;
 END_IF
 
-xPlanarNormalSequence();
+xPlanarProgram();
 
 CoeToPlc();
-po();]]></ST>
+]]></ST>
     </Implementation>
     <LineIds Name="MAIN">
       <LineId Id="181" Count="0" />
@@ -29,8 +29,8 @@ po();]]></ST>
       <LineId Id="190" Count="0" />
       <LineId Id="189" Count="0" />
       <LineId Id="192" Count="2" />
-      <LineId Id="180" Count="0" />
-      <LineId Id="164" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="210" Count="0" />
       <LineId Id="182" Count="0" />
       <LineId Id="26" Count="0" />
       <LineId Id="202" Count="0" />

@@ -41,25 +41,7 @@
     <Compile Include="POUs\xPlanar\xPlanarControl.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\xPlanar\xPlanarErrorHandling.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\xPlanar\xPlanarMovements.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\xPlanar\xPlanarNormalSequence.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\xPlanar\xPlanarPower.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="POUs\xPlanar\xPlanarProgram.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\xPlanar\xPlanarRandomSequence.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\xPlanar\xPlanarUtility.TcPOU">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

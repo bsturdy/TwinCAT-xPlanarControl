@@ -3,12 +3,23 @@
   <POU Name="xPlanarProgram" Id="{5f53017b-87c3-461b-8337-82487cd68e06}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM xPlanarProgram
 VAR
+	
 	Control			: xPlanarControl;
+	
 	State			: BYTE;
+	
+	ProgramRunning	: BOOL;
+	
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+IF IO.HardwareInput[1] THEN
+	ProgramRunning := NOT(ProgramRunning);
+END_IF
+
+Control.MoverEnabled;
+
 Control.CyclicUpdate();
 
 IF Control.DetectErrors() THEN
@@ -20,8 +31,6 @@ CASE State OF
 	0:
 		IF Control.EnableMovers() THEN
 			State := 1;
-		ELSE
-			State := 99;
 		END_IF
 		
 	1:
@@ -62,6 +71,9 @@ CASE State OF
 END_CASE]]></ST>
     </Implementation>
     <LineIds Name="xPlanarProgram">
+      <LineId Id="93" Count="1" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="95" Count="1" />
       <LineId Id="19" Count="1" />
       <LineId Id="23" Count="0" />
       <LineId Id="22" Count="0" />
@@ -69,9 +81,7 @@ END_CASE]]></ST>
       <LineId Id="8" Count="0" />
       <LineId Id="5" Count="0" />
       <LineId Id="9" Count="0" />
-      <LineId Id="13" Count="2" />
-      <LineId Id="17" Count="1" />
-      <LineId Id="16" Count="0" />
+      <LineId Id="13" Count="3" />
       <LineId Id="31" Count="4" />
       <LineId Id="26" Count="0" />
       <LineId Id="36" Count="0" />

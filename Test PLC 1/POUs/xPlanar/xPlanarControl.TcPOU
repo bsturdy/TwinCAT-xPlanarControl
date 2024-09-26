@@ -4,21 +4,27 @@
     <Declaration><![CDATA[FUNCTION_BLOCK xPlanarControl
 VAR
 	
-	_PlanarMover			: ARRAY [1..MoverCount] OF MC_PlanarMover;
-	_PlanarFeedback			: ARRAY [1..MoverCount] OF MC_PlanarFeedback;
-	_MoveParameters			: ARRAY [1..MoverCount] OF ST_MoverParameters;
+	// xPlanar objects
+	_PlanarMover			: ARRAY [1.._MoverCount] OF MC_PlanarMover;
+	_PlanarFeedback			: ARRAY [1.._MoverCount] OF MC_PlanarFeedback;
+	_MoveParameters			: ARRAY [1.._MoverCount] OF ST_MoverParameters;
 	
-	_i						: BYTE;
-	_LocalState				: BYTE;
+	// Internal states and counters
+	_i						: UINT;
+	_LocalState				: UINT;
 	_InternalCounter		: UINT;
 	_ErrorCount				: UINT;
+	_ErrorCode				: UDINT;
+	_ErrorCodePrevious		: UDINT;
 	_CommandDone			: BOOL;
 	
+	// Status of movers
 	_Enabled				: ARRAY [1.._MoverCount] OF BOOL;
 	_Error					: ARRAY [1.._MoverCount] OF BOOL;
 	_Busy					: ARRAY [1.._MoverCount] OF BOOL;
 	_Done					: ARRAY [1.._MoverCount] OF BOOL;
 	
+	// Parameters of movers
 	_Velocity				: LREAL := 2000;
 	_Acceleration			: LREAL := 20000;
 	_Deceleration			: LREAL := 20000;
@@ -28,7 +34,8 @@ VAR
 END_VAR
 VAR CONSTANT
 	
-	_MoverCount				: BYTE := 2;
+	// Number of movers
+	_MoverCount				: UINT := 2;
 
 END_VAR]]></Declaration>
     <Implementation>
@@ -70,15 +77,21 @@ END_VAR]]></Declaration>
     </Implementation>
     <Folder Name="Movements 2-Tile" Id="{564f56f8-bb5c-4eca-8a56-c64a7594c15d}" />
     <Folder Name="Movements General" Id="{aee95a18-140d-4ee9-ac40-69e7d69f9acf}" />
-    <Folder Name="Power and Utility" Id="{c5ba77ca-a5ce-43bc-a81f-9b9628e1d54c}" />
-    <Folder Name="Properties" Id="{0453768e-2223-4ce2-b57c-26f2fb086bed}" />
-    <Method Name="CyclicUpdate" Id="{c7e9e683-b8ab-4217-b047-2e15baa6471c}" FolderPath="Power and Utility\">
+    <Folder Name="Power, Updates and Errors" Id="{c5ba77ca-a5ce-43bc-a81f-9b9628e1d54c}" />
+    <Folder Name="Properties" Id="{0453768e-2223-4ce2-b57c-26f2fb086bed}">
+      <Folder Name="Mover Attributes" Id="{55d9eb81-aa28-4943-ab68-008b0241e025}" />
+      <Folder Name="Mover State" Id="{aacac47d-b1ac-450f-aed7-1cf5f67c5c41}" />
+    </Folder>
+    <Folder Name="Utility" Id="{859f915d-8d15-4358-93a7-bf99aa3a769f}" />
+    <Method Name="CyclicUpdate" Id="{c7e9e683-b8ab-4217-b047-2e15baa6471c}" FolderPath="Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD CyclicUpdate : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+// Update method needs to be called cyclically
+
 FOR _i := 1 TO _MoverCount DO
 	
 	_PlanarMover[_i].Update();
@@ -115,7 +128,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-// Movers go a bit low
+// Movers decrease height
 	
 CASE _LocalState OF
 	
@@ -161,29 +174,33 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="DetectErrors" Id="{daaeb43c-d127-4004-8d5e-5bf5a68f458b}" FolderPath="Power and Utility\">
+    <Method Name="DetectErrors" Id="{daaeb43c-d127-4004-8d5e-5bf5a68f458b}" FolderPath="Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD DetectErrors : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+// Error detection method
+
 FOR _i := 1 TO _MoverCount DO
 	IF _PlanarMover[_i].Error THEN
 		_Error[_i] := TRUE;
-		_ErrorCount := _ErrorCount + 1;
+		_LocalState := 0;
 		DetectErrors := TRUE;
 	END_IF
 END_FOR]]></ST>
       </Implementation>
     </Method>
-    <Method Name="DisableMovers" Id="{425fd2bc-6f54-4fce-935d-1f0a1dc8c22b}" FolderPath="Power and Utility\">
+    <Method Name="DisableMovers" Id="{425fd2bc-6f54-4fce-935d-1f0a1dc8c22b}" FolderPath="Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD DisableMovers : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+// Disable movers
+
 CASE _LocalState OF
 	
 	0:
@@ -220,13 +237,15 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="EnableMovers" Id="{ecc31ae1-6e60-4543-ab06-14adb5849eca}" FolderPath="Power and Utility\">
+    <Method Name="EnableMovers" Id="{ecc31ae1-6e60-4543-ab06-14adb5849eca}" FolderPath="Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD EnableMovers : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+// Enable movers
+
 CASE _LocalState OF
 	
 	0:
@@ -548,7 +567,17 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Property Name="MoverAcceleration" Id="{46b26c09-adf7-42f2-a584-23d59417babe}" FolderPath="Properties\">
+    <Method Name="MeasureWeightOnTile" Id="{96492394-9694-43ad-b71b-299c9f9b441f}" FolderPath="Utility\">
+      <Declaration><![CDATA[METHOD MeasureWeightOnTile : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// Measures the weight of an object on a tile]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="MoverAcceleration" Id="{46b26c09-adf7-42f2-a584-23d59417babe}" FolderPath="Properties\Mover Attributes\">
       <Declaration><![CDATA[PROPERTY MoverAcceleration : LREAL]]></Declaration>
       <Get Name="Get" Id="{f150d898-6fb7-4350-b36b-5cbdc8b0e614}">
         <Declaration><![CDATA[VAR
@@ -571,7 +600,26 @@ END_IF]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Property Name="MoverDeceleration" Id="{6dc3dcb8-27e4-496b-9d9d-8aa4ebb3da14}" FolderPath="Properties\">
+    <Property Name="MoverBusy" Id="{c11cbac8-4b91-4966-89dc-ba7f5f7a86e5}" FolderPath="Properties\Mover State\">
+      <Declaration><![CDATA[PROPERTY MoverBusy : ARRAY[1.._MoverCount] OF BOOL]]></Declaration>
+      <Get Name="Get" Id="{11aeb304-4070-4226-af8d-d2d079a16cb2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoverBusy := _Busy;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{a64319f7-49c7-45c5-8c7c-696c6cd16b0c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoverDeceleration" Id="{6dc3dcb8-27e4-496b-9d9d-8aa4ebb3da14}" FolderPath="Properties\Mover Attributes\">
       <Declaration><![CDATA[PROPERTY MoverDeceleration : LREAL]]></Declaration>
       <Get Name="Get" Id="{884afb94-efd9-439f-bae0-ba17499a176f}">
         <Declaration><![CDATA[VAR
@@ -594,7 +642,64 @@ END_IF]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Property Name="MoverJerk" Id="{5a9d4136-5d1c-4a75-87a5-d8c9624b6c9e}" FolderPath="Properties\">
+    <Property Name="MoverDone" Id="{0308a3d0-d1cc-4686-90bb-ac9fea206c73}" FolderPath="Properties\Mover State\">
+      <Declaration><![CDATA[PROPERTY MoverDone : Array [1.._MoverCount] OF BOOL]]></Declaration>
+      <Get Name="Get" Id="{1fd5ba50-2e56-4979-80ff-6666360b5759}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoverDone := _Done;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{54a4b7e1-5dca-49b5-a349-838350c87603}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoverEnabled" Id="{bf7036cc-91b4-4c09-8cba-99551446a777}" FolderPath="Properties\Mover State\">
+      <Declaration><![CDATA[PROPERTY MoverEnabled : ARRAY [1.._MoverCount] OF BOOL]]></Declaration>
+      <Get Name="Get" Id="{d6f3e017-f9bf-4317-98fd-53879d82659d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoverEnabled := _Enabled;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d726d8f1-d341-41cd-baa6-0ab1499fcfe0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoverError" Id="{c577a3a6-2f4c-4698-be42-7d3dcfd67637}" FolderPath="Properties\Mover State\">
+      <Declaration><![CDATA[PROPERTY MoverError : ARRAY[1.._MoverCount] OF BOOL]]></Declaration>
+      <Get Name="Get" Id="{3da9024b-2595-450f-b564-b70a3f12a472}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoverError := _Error;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{edc652b5-28b5-4c71-898d-884237775223}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoverJerk" Id="{5a9d4136-5d1c-4a75-87a5-d8c9624b6c9e}" FolderPath="Properties\Mover Attributes\">
       <Declaration><![CDATA[PROPERTY MoverJerk : LREAL]]></Declaration>
       <Get Name="Get" Id="{b43c6ed6-c2d3-4a6f-931b-a00f7c04025f}">
         <Declaration><![CDATA[VAR
@@ -617,7 +722,30 @@ END_IF]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Property Name="MoverVelocity" Id="{742b6ed5-8994-47d0-9514-f9da80a4d053}" FolderPath="Properties\">
+    <Property Name="MoverNumberOfRotations" Id="{bb4ff67d-7367-4b7a-959f-713804187620}" FolderPath="Properties\Mover Attributes\">
+      <Declaration><![CDATA[PROPERTY MoverNumberOfRotations : UDINT]]></Declaration>
+      <Get Name="Get" Id="{5b9291ce-f4c0-4cba-bab1-5877eaf99aad}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoverNumberOfRotations := _NumberOfRotations;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d5eb936f-7c12-4a48-8ac9-c0d81b0e38d0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IF (MoverNumberOfRotations <= 0) THEN
+	_NumberOfRotations := 1;
+ELSE
+	_NumberOfRotations := MoverNumberOfRotations;
+END_IF]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoverVelocity" Id="{742b6ed5-8994-47d0-9514-f9da80a4d053}" FolderPath="Properties\Mover Attributes\">
       <Declaration><![CDATA[PROPERTY MoverVelocity : LREAL]]></Declaration>
       <Get Name="Get" Id="{a39c28bf-5625-4f47-9c93-b9492438d570}">
         <Declaration><![CDATA[VAR
@@ -640,36 +768,15 @@ END_IF]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Property Name="NumberOfRotations" Id="{bb4ff67d-7367-4b7a-959f-713804187620}" FolderPath="Properties\">
-      <Declaration><![CDATA[PROPERTY NumberOfRotations : UDINT]]></Declaration>
-      <Get Name="Get" Id="{5b9291ce-f4c0-4cba-bab1-5877eaf99aad}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[NumberOfRotations := _NumberOfRotations;]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{d5eb936f-7c12-4a48-8ac9-c0d81b0e38d0}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[IF (NumberOfRotations <= 0) THEN
-	_NumberOfRotations := 1;
-ELSE
-	_NumberOfRotations := NumberOfRotations;
-END_IF]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
-    <Method Name="ResetErrors" Id="{3c8381a0-95d7-49ca-b1ac-a766e6689e5f}" FolderPath="Power and Utility\">
+    <Method Name="ResetErrors" Id="{3c8381a0-95d7-49ca-b1ac-a766e6689e5f}" FolderPath="Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD ResetErrors : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+// Reset errors
+
 CASE _LocalState OF
 	
 	0: 
@@ -702,6 +809,7 @@ CASE _LocalState OF
 			
 	2:
 		_LocalState := 0;
+		_ErrorCount := _ErrorCount + 1;
 		ResetErrors := TRUE;
 	
 END_CASE	]]></ST>
@@ -752,7 +860,7 @@ CASE _LocalState OF
 		IF _CommandDone THEN
 			_CommandDone := FALSE;
 			_InternalCounter := 0;
-			_LocalState := 2;
+			_LocalState := 3;
 		END_IF
 		
 	3:
@@ -1268,7 +1376,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-// Movers go a bit high
+// Movers vary their height multiple times
 
 CASE _LocalState OF
 	
@@ -1475,6 +1583,7 @@ END_CASE]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="xPlanarControl.CyclicUpdate">
+      <LineId Id="42" Count="1" />
       <LineId Id="6" Count="0" />
       <LineId Id="5" Count="0" />
       <LineId Id="28" Count="0" />
@@ -1502,16 +1611,18 @@ END_CASE]]></ST>
       <LineId Id="12" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.DetectErrors">
+      <LineId Id="53" Count="1" />
       <LineId Id="47" Count="0" />
       <LineId Id="30" Count="0" />
       <LineId Id="33" Count="0" />
       <LineId Id="35" Count="0" />
-      <LineId Id="49" Count="0" />
+      <LineId Id="58" Count="0" />
       <LineId Id="40" Count="0" />
       <LineId Id="36" Count="0" />
       <LineId Id="34" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.DisableMovers">
+      <LineId Id="147" Count="1" />
       <LineId Id="142" Count="0" />
       <LineId Id="109" Count="2" />
       <LineId Id="113" Count="15" />
@@ -1522,6 +1633,7 @@ END_CASE]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.EnableMovers">
+      <LineId Id="96" Count="1" />
       <LineId Id="51" Count="0" />
       <LineId Id="76" Count="0" />
       <LineId Id="52" Count="7" />
@@ -1619,6 +1731,10 @@ END_CASE]]></ST>
       <LineId Id="131" Count="0" />
       <LineId Id="130" Count="0" />
     </LineIds>
+    <LineIds Name="xPlanarControl.MeasureWeightOnTile">
+      <LineId Id="6" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
     <LineIds Name="xPlanarControl.MoverAcceleration.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
@@ -1628,6 +1744,12 @@ END_CASE]]></ST>
       <LineId Id="7" Count="1" />
       <LineId Id="6" Count="0" />
     </LineIds>
+    <LineIds Name="xPlanarControl.MoverBusy.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverBusy.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
     <LineIds Name="xPlanarControl.MoverDeceleration.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
@@ -1635,10 +1757,35 @@ END_CASE]]></ST>
       <LineId Id="5" Count="3" />
       <LineId Id="2" Count="0" />
     </LineIds>
+    <LineIds Name="xPlanarControl.MoverDone.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverDone.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverEnabled.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverEnabled.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverError.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverError.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
     <LineIds Name="xPlanarControl.MoverJerk.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.MoverJerk.Set">
+      <LineId Id="5" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverNumberOfRotations.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverNumberOfRotations.Set">
       <LineId Id="5" Count="3" />
       <LineId Id="2" Count="0" />
     </LineIds>
@@ -1649,14 +1796,8 @@ END_CASE]]></ST>
       <LineId Id="5" Count="3" />
       <LineId Id="2" Count="0" />
     </LineIds>
-    <LineIds Name="xPlanarControl.NumberOfRotations.Get">
-      <LineId Id="2" Count="0" />
-    </LineIds>
-    <LineIds Name="xPlanarControl.NumberOfRotations.Set">
-      <LineId Id="5" Count="3" />
-      <LineId Id="2" Count="0" />
-    </LineIds>
     <LineIds Name="xPlanarControl.ResetErrors">
+      <LineId Id="65" Count="1" />
       <LineId Id="40" Count="0" />
       <LineId Id="10" Count="0" />
       <LineId Id="17" Count="0" />
@@ -1676,6 +1817,7 @@ END_CASE]]></ST>
       <LineId Id="18" Count="0" />
       <LineId Id="34" Count="0" />
       <LineId Id="61" Count="0" />
+      <LineId Id="70" Count="0" />
       <LineId Id="35" Count="1" />
       <LineId Id="15" Count="0" />
     </LineIds>
