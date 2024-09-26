@@ -10,17 +10,17 @@ VAR
 	_MoveParameters			: ARRAY [1.._MoverCount] OF ST_MoverParameters;
 	
 	// Internal states and counters
-	_i						: UINT;
-	_LocalState				: UINT;
-	_InternalCounter		: UINT;
-	_ErrorCount				: UINT;
-	_ErrorCode				: UDINT;
-	_ErrorCodePrevious		: UDINT;
-	_CommandDone			: BOOL;
+	_i						: UINT := 0;
+	_LocalState				: UINT := 0;
+	_InternalCounter		: UINT := 0;
+	_ErrorCount				: UINT := 0;
+	_CommandDone			: BOOL := FALSE;
 	
 	// Status of movers
 	_Enabled				: ARRAY [1.._MoverCount] OF BOOL;
 	_Error					: ARRAY [1.._MoverCount] OF BOOL;
+	_ErrorCode				: ARRAY [1.._MoverCount] OF UDINT;
+	_ErrorCodePrevious		: ARRAY [1.._MoverCount] OF UDINT;
 	_Busy					: ARRAY [1.._MoverCount] OF BOOL;
 	_Done					: ARRAY [1.._MoverCount] OF BOOL;
 	
@@ -75,15 +75,17 @@ END_VAR]]></Declaration>
         </XmlArchive>
       </NWL>
     </Implementation>
-    <Folder Name="Movements 2-Tile" Id="{564f56f8-bb5c-4eca-8a56-c64a7594c15d}" />
-    <Folder Name="Movements General" Id="{aee95a18-140d-4ee9-ac40-69e7d69f9acf}" />
-    <Folder Name="Power, Updates and Errors" Id="{c5ba77ca-a5ce-43bc-a81f-9b9628e1d54c}" />
+    <Folder Name="Methods" Id="{2d820bc0-a9a0-4644-859d-9983f3034247}">
+      <Folder Name="Movements 2-Tile" Id="{564f56f8-bb5c-4eca-8a56-c64a7594c15d}" />
+      <Folder Name="Movements General" Id="{aee95a18-140d-4ee9-ac40-69e7d69f9acf}" />
+      <Folder Name="Power, Updates and Errors" Id="{c5ba77ca-a5ce-43bc-a81f-9b9628e1d54c}" />
+      <Folder Name="Utility" Id="{859f915d-8d15-4358-93a7-bf99aa3a769f}" />
+    </Folder>
     <Folder Name="Properties" Id="{0453768e-2223-4ce2-b57c-26f2fb086bed}">
       <Folder Name="Mover Attributes" Id="{55d9eb81-aa28-4943-ab68-008b0241e025}" />
       <Folder Name="Mover State" Id="{aacac47d-b1ac-450f-aed7-1cf5f67c5c41}" />
     </Folder>
-    <Folder Name="Utility" Id="{859f915d-8d15-4358-93a7-bf99aa3a769f}" />
-    <Method Name="CyclicUpdate" Id="{c7e9e683-b8ab-4217-b047-2e15baa6471c}" FolderPath="Power, Updates and Errors\">
+    <Method Name="CyclicUpdate" Id="{c7e9e683-b8ab-4217-b047-2e15baa6471c}" FolderPath="Methods\Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD CyclicUpdate : BOOL
 VAR_INPUT
 END_VAR
@@ -107,20 +109,25 @@ FOR _i := 1 TO _MoverCount DO
 	_Busy[_i] := _PlanarFeedback[_i].Busy;
 	_Done[_i] := _PlanarFeedback[_i].Done;
 	
-END_FOR
-
-_MoveParameters[1].Options.useOrientation := TRUE;
-_MoveParameters[1].Constraints.SetValuesVADJ(V := _Velocity, A := _Acceleration, D := _Deceleration, J := _Jerk);
-_MoveParameters[1].rotateOptions.additionalTurns := _NumberOfRotations;
-_MoveParameters[1].rotateOptions.direction := 1;
-
-_MoveParameters[2].Options.useOrientation := TRUE;
-_MoveParameters[2].Constraints.SetValuesVADJ(V := _Velocity, A := _Acceleration, D := _Deceleration, J := _Jerk);
-_MoveParameters[2].rotateOptions.additionalTurns := _NumberOfRotations;
-_MoveParameters[2].rotateOptions.direction := 3;]]></ST>
+	_ErrorCode[_i] := _PlanarFeedback[_i].ErrorId;
+	IF _PlanarFeedback[_i].ErrorId <> 0 THEN
+		_ErrorCodePrevious[_i] := _PlanarFeedback[_i].ErrorId;
+	END_IF
+	
+	_MoveParameters[_i].Options.useOrientation := TRUE;
+	_MoveParameters[_i].Constraints.SetValuesVADJ(V := _Velocity, A := _Acceleration, D := _Deceleration, J := _Jerk);
+	_MoveParameters[_i].rotateOptions.additionalTurns := _NumberOfRotations;
+	
+	IF (_i MOD 2 <> 0) THEN
+		_MoveParameters[_i].rotateOptions.direction := 1;
+	ELSE
+		_MoveParameters[_i].rotateOptions.direction := 3;
+	END_IF
+	
+END_FOR]]></ST>
       </Implementation>
     </Method>
-    <Method Name="DecreaseMoverHeight" Id="{d9c1f541-a92b-457b-b498-ae0f9078990c}" FolderPath="Movements General\">
+    <Method Name="DecreaseMoverHeight" Id="{d9c1f541-a92b-457b-b498-ae0f9078990c}" FolderPath="Methods\Movements General\">
       <Declaration><![CDATA[METHOD PUBLIC DecreaseMoverHeight : BOOL
 VAR_INPUT
 END_VAR
@@ -174,7 +181,7 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="DetectErrors" Id="{daaeb43c-d127-4004-8d5e-5bf5a68f458b}" FolderPath="Power, Updates and Errors\">
+    <Method Name="DetectErrors" Id="{daaeb43c-d127-4004-8d5e-5bf5a68f458b}" FolderPath="Methods\Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD DetectErrors : BOOL
 VAR_INPUT
 END_VAR
@@ -192,7 +199,7 @@ FOR _i := 1 TO _MoverCount DO
 END_FOR]]></ST>
       </Implementation>
     </Method>
-    <Method Name="DisableMovers" Id="{425fd2bc-6f54-4fce-935d-1f0a1dc8c22b}" FolderPath="Power, Updates and Errors\">
+    <Method Name="DisableMovers" Id="{425fd2bc-6f54-4fce-935d-1f0a1dc8c22b}" FolderPath="Methods\Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD DisableMovers : BOOL
 VAR_INPUT
 END_VAR
@@ -237,7 +244,7 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="EnableMovers" Id="{ecc31ae1-6e60-4543-ab06-14adb5849eca}" FolderPath="Power, Updates and Errors\">
+    <Method Name="EnableMovers" Id="{ecc31ae1-6e60-4543-ab06-14adb5849eca}" FolderPath="Methods\Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD EnableMovers : BOOL
 VAR_INPUT
 END_VAR
@@ -283,7 +290,7 @@ END_CASE
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="FollowTileEdge" Id="{87cfbbfe-b39c-4b51-8245-78953324c448}" FolderPath="Movements 2-Tile\">
+    <Method Name="FollowTileEdge" Id="{87cfbbfe-b39c-4b51-8245-78953324c448}" FolderPath="Methods\Movements 2-Tile\">
       <Declaration><![CDATA[METHOD PUBLIC FollowTileEdge : BOOL
 VAR_INPUT
 END_VAR
@@ -505,7 +512,7 @@ END_VAR
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="Home" Id="{c3147f7b-df53-4a91-a0c1-7a36cd9f6a0f}" FolderPath="Movements 2-Tile\">
+    <Method Name="Home" Id="{c3147f7b-df53-4a91-a0c1-7a36cd9f6a0f}" FolderPath="Methods\Movements 2-Tile\">
       <Declaration><![CDATA[METHOD PUBLIC Home : BOOL
 VAR_INPUT
 END_VAR
@@ -567,14 +574,16 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MeasureWeightOnTile" Id="{96492394-9694-43ad-b71b-299c9f9b441f}" FolderPath="Utility\">
+    <Method Name="MeasureWeightOnTile" Id="{96492394-9694-43ad-b71b-299c9f9b441f}" FolderPath="Methods\Utility\">
       <Declaration><![CDATA[METHOD MeasureWeightOnTile : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-// Measures the weight of an object on a tile]]></ST>
+// Measures the weight of an object on a tile
+
+]]></ST>
       </Implementation>
     </Method>
     <Property Name="MoverAcceleration" Id="{46b26c09-adf7-42f2-a584-23d59417babe}" FolderPath="Properties\Mover Attributes\">
@@ -722,6 +731,25 @@ END_IF]]></ST>
         </Implementation>
       </Set>
     </Property>
+    <Property Name="MoverLastErrorCode" Id="{41c8e50d-73dc-403c-8e5c-5a1c2f0c7422}" FolderPath="Properties\Mover State\">
+      <Declaration><![CDATA[PROPERTY MoverLastErrorCode : ARRAY [1.._MoverCount] OF UDINT]]></Declaration>
+      <Get Name="Get" Id="{aac205f3-6f08-4c19-a3ae-59b6bbdcb5dc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoverLastErrorCode := _ErrorCodePrevious;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{25db58ed-2c46-4ac5-a2b3-194394a9e4b8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Property Name="MoverNumberOfRotations" Id="{bb4ff67d-7367-4b7a-959f-713804187620}" FolderPath="Properties\Mover Attributes\">
       <Declaration><![CDATA[PROPERTY MoverNumberOfRotations : UDINT]]></Declaration>
       <Get Name="Get" Id="{5b9291ce-f4c0-4cba-bab1-5877eaf99aad}">
@@ -768,7 +796,7 @@ END_IF]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Method Name="ResetErrors" Id="{3c8381a0-95d7-49ca-b1ac-a766e6689e5f}" FolderPath="Power, Updates and Errors\">
+    <Method Name="ResetErrors" Id="{3c8381a0-95d7-49ca-b1ac-a766e6689e5f}" FolderPath="Methods\Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD ResetErrors : BOOL
 VAR_INPUT
 END_VAR
@@ -815,7 +843,7 @@ CASE _LocalState OF
 END_CASE	]]></ST>
       </Implementation>
     </Method>
-    <Method Name="Spin" Id="{c0469bb5-8daf-4d6a-9025-07ed0e9b795c}" FolderPath="Movements General\">
+    <Method Name="Spin" Id="{c0469bb5-8daf-4d6a-9025-07ed0e9b795c}" FolderPath="Methods\Movements General\">
       <Declaration><![CDATA[METHOD PUBLIC Spin : BOOL
 VAR_INPUT
 END_VAR
@@ -870,7 +898,7 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="SwapPlaces" Id="{2b69bc2c-8a8e-489d-9688-bbcbb0285218}" FolderPath="Movements 2-Tile\">
+    <Method Name="SwapPlaces" Id="{2b69bc2c-8a8e-489d-9688-bbcbb0285218}" FolderPath="Methods\Movements 2-Tile\">
       <Declaration><![CDATA[METHOD PUBLIC SwapPlaces : BOOL
 VAR_INPUT
 END_VAR
@@ -1091,7 +1119,7 @@ CASE _LocalState OF
 END_CASE		]]></ST>
       </Implementation>
     </Method>
-    <Method Name="Tilt" Id="{42665e86-4a61-4716-bd60-3a2489faf341}" FolderPath="Movements General\">
+    <Method Name="Tilt" Id="{42665e86-4a61-4716-bd60-3a2489faf341}" FolderPath="Methods\Movements General\">
       <Declaration><![CDATA[METHOD PUBLIC Tilt : BOOL
 VAR_INPUT
 END_VAR]]></Declaration>
@@ -1138,10 +1166,10 @@ CASE _LocalState OF
 
 	
 	3:
-		FOR _i := 1 TO xPlanarLink.MoverCount DO
-			xPlanarLink.PlanarMover[_i].MoveA
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].MoveA
 			(	
-				commandFeedback		:= xPlanarLink.PlanarFeedback[_i],
+				commandFeedback		:= _PlanarFeedback[_i],
 				targetPosition		:= 4.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1368,7 +1396,7 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="VaryMoverHeight" Id="{3f462c74-2326-4182-a953-36e0d5d57b05}" FolderPath="Movements General\">
+    <Method Name="VaryMoverHeight" Id="{3f462c74-2326-4182-a953-36e0d5d57b05}" FolderPath="Methods\Movements General\">
       <Declaration><![CDATA[METHOD PUBLIC VaryMoverHeight : BOOL
 VAR_INPUT
 END_VAR
@@ -1595,10 +1623,15 @@ END_CASE]]></ST>
       <LineId Id="24" Count="1" />
       <LineId Id="27" Count="0" />
       <LineId Id="23" Count="0" />
-      <LineId Id="22" Count="0" />
+      <LineId Id="60" Count="1" />
+      <LineId Id="63" Count="2" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="49" Count="3" />
+      <LineId Id="54" Count="1" />
+      <LineId Id="58" Count="1" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="53" Count="0" />
       <LineId Id="8" Count="0" />
-      <LineId Id="30" Count="8" />
-      <LineId Id="29" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.DecreaseMoverHeight">
       <LineId Id="48" Count="1" />
@@ -1734,6 +1767,8 @@ END_CASE]]></ST>
     <LineIds Name="xPlanarControl.MeasureWeightOnTile">
       <LineId Id="6" Count="0" />
       <LineId Id="5" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="10" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.MoverAcceleration.Get">
       <LineId Id="2" Count="0" />
@@ -1780,6 +1815,12 @@ END_CASE]]></ST>
     </LineIds>
     <LineIds Name="xPlanarControl.MoverJerk.Set">
       <LineId Id="5" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverLastErrorCode.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.MoverLastErrorCode.Set">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.MoverNumberOfRotations.Get">

@@ -8,17 +8,42 @@ VAR
 	
 	State			: BYTE;
 	
+	ProgramTrigger	: R_Trig;
+	
+	LEDTimer		: TON;
+	Trigger			: BOOL;
+	FlashTime		: TIME := T#250MS;
+	
 	ProgramRunning	: BOOL;
 	
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-IF IO.HardwareInput[1] THEN
+// ---------- LED logic
+
+ProgramTrigger(CLK := IO.HardwareInput[1]);
+LEDTimer(IN := (NOT(LEDTimer.Q)), PT := FlashTime);
+
+IF LEDTimer.Q THEN
+	IO.HardwareOutput[1] := NOT(IO.HardwareOutput[1]);
+END_IF
+
+IF ProgramTrigger.Q THEN
 	ProgramRunning := NOT(ProgramRunning);
 END_IF
 
-Control.MoverEnabled;
+IF (NOT(ProgramRunning) AND (State <> 0)) THEN
+	Trigger := TRUE;
+	FlashTime := T#200MS;
+ELSE
+	Trigger := FALSE;
+	FlashTime := T#1000MS;
+END_IF
+
+
+
+// ---------- xPlanar control program
 
 Control.CyclicUpdate();
 
@@ -29,38 +54,87 @@ END_IF
 CASE State OF
 	
 	0:
-		IF Control.EnableMovers() THEN
+		IF ProgramRunning THEN
 			State := 1;
+		ELSE
+			State := 0;
 		END_IF
 		
-	1:
-		IF Control.Home() THEN
+	1:	
+		IF Control.EnableMovers() THEN
 			State := 2;
 		END_IF
 		
 	2:
-		IF Control.SwapPlaces() THEN
+		IF ProgramRunning THEN
 			State := 3;
-		END_IF	
+		ELSE
+			State := 0;
+		END_IF
 		
 	3:
-		IF Control.FollowTileEdge() THEN
+		IF Control.Home() THEN
 			State := 4;
 		END_IF
 		
 	4:
-		IF Control.VaryMoverHeight() THEN
+		IF ProgramRunning THEN
 			State := 5;
+		ELSE
+			State := 0;
 		END_IF
 		
 	5:
-		IF Control.Spin() THEN
+		IF Control.SwapPlaces() THEN
 			State := 6;
-		END_IF
+		END_IF	
 		
 	6:
+		IF ProgramRunning THEN
+			State := 7;
+		ELSE
+			State := 0;
+		END_IF
+		
+	7:
+		IF Control.FollowTileEdge() THEN
+			State := 8;
+		END_IF
+		
+	8:
+		IF ProgramRunning THEN
+			State := 9;
+		ELSE
+			State := 0;
+		END_IF
+		
+	9:
+		IF Control.VaryMoverHeight() THEN
+			State := 10;
+		END_IF
+		
+	10:
+		IF ProgramRunning THEN
+			State := 11;
+		ELSE
+			State := 0;
+		END_IF
+		
+	11:
+		IF Control.Spin() THEN
+			State := 12;
+		END_IF
+		
+	12:
+		IF ProgramRunning THEN
+			State := 13;
+		ELSE
+			State := 0;
+		END_IF
+		
+	13:
 		IF Control.Tilt() THEN
-			State := 1;
+			State := 2;
 		END_IF
 			
 	99:
@@ -71,9 +145,23 @@ CASE State OF
 END_CASE]]></ST>
     </Implementation>
     <LineIds Name="xPlanarProgram">
+      <LineId Id="209" Count="1" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="194" Count="0" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="198" Count="2" />
       <LineId Id="93" Count="1" />
       <LineId Id="98" Count="1" />
-      <LineId Id="95" Count="1" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="207" Count="1" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="213" Count="1" />
+      <LineId Id="211" Count="1" />
       <LineId Id="19" Count="1" />
       <LineId Id="23" Count="0" />
       <LineId Id="22" Count="0" />
@@ -81,11 +169,39 @@ END_CASE]]></ST>
       <LineId Id="8" Count="0" />
       <LineId Id="5" Count="0" />
       <LineId Id="9" Count="0" />
-      <LineId Id="13" Count="3" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="115" Count="1" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="117" Count="1" />
+      <LineId Id="14" Count="2" />
+      <LineId Id="119" Count="1" />
+      <LineId Id="122" Count="3" />
+      <LineId Id="121" Count="0" />
       <LineId Id="31" Count="4" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="129" Count="3" />
+      <LineId Id="128" Count="0" />
       <LineId Id="26" Count="0" />
       <LineId Id="36" Count="0" />
-      <LineId Id="38" Count="17" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="133" Count="1" />
+      <LineId Id="136" Count="3" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="41" Count="4" />
+      <LineId Id="140" Count="1" />
+      <LineId Id="147" Count="3" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="46" Count="4" />
+      <LineId Id="151" Count="1" />
+      <LineId Id="154" Count="3" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="51" Count="4" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="166" Count="3" />
+      <LineId Id="165" Count="0" />
       <LineId Id="57" Count="4" />
       <LineId Id="37" Count="0" />
       <LineId Id="27" Count="3" />
