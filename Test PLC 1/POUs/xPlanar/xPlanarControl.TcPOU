@@ -5,37 +5,45 @@
 VAR
 	
 	// xPlanar objects
-	_PlanarMover			: ARRAY [1.._MoverCount] OF MC_PlanarMover;
-	_PlanarFeedback			: ARRAY [1.._MoverCount] OF MC_PlanarFeedback;
-	_MoveParameters			: ARRAY [1.._MoverCount] OF ST_MoverParameters;
+	_PlanarMover				: ARRAY [1.._MoverCount] OF MC_PlanarMover;
+	_PlanarMoverFeedback		: ARRAY [1.._MoverCount] OF MC_PlanarFeedback;
+	_PlanarGroup				: MC_PlanarGroup;
+	_PlanarGroupFeedback		: MC_PlanarFeedback;
+	_PlanarEnvironment			: MC_PlanarEnvironment;
+	_PlanarEnvironmentFeedback	: MC_PlanarFeedback;
+	_PlanarTrack				: ARRAY [1.._TrackCount] OF MC_PlanarTrack;
+	_PlanarTrackFeedback		: ARRAY [1.._TrackCount] OF MC_PlanarFeedback;
+	
+	_MoveParameters				: ARRAY [1.._MoverCount] OF ST_MoverParameters;
 	
 	// Internal states and counters
-	_i						: UINT := 0;
-	_LocalState				: UINT := 0;
-	_InternalCounter		: UINT := 0;
-	_ErrorCount				: UINT := 0;
-	_CommandDone			: BOOL := FALSE;
+	_i							: UINT := 0;
+	_LocalState					: UINT := 0;
+	_InternalCounter			: UINT := 0;
+	_ErrorCount					: UINT := 0;
+	_CommandDone				: BOOL := FALSE;
 	
 	// Status of movers
-	_Enabled				: ARRAY [1.._MoverCount] OF BOOL;
-	_Error					: ARRAY [1.._MoverCount] OF BOOL;
-	_ErrorCode				: ARRAY [1.._MoverCount] OF UDINT;
-	_ErrorCodePrevious		: ARRAY [1.._MoverCount] OF UDINT;
-	_Busy					: ARRAY [1.._MoverCount] OF BOOL;
-	_Done					: ARRAY [1.._MoverCount] OF BOOL;
+	_Enabled					: ARRAY [1.._MoverCount] OF BOOL;
+	_Error						: ARRAY [1.._MoverCount] OF BOOL;
+	_ErrorCode					: ARRAY [1.._MoverCount] OF UDINT;
+	_ErrorCodePrevious			: ARRAY [1.._MoverCount] OF UDINT;
+	_Busy						: ARRAY [1.._MoverCount] OF BOOL;
+	_Done						: ARRAY [1.._MoverCount] OF BOOL;
 	
 	// Parameters of movers
-	_Velocity				: LREAL := 2000;
-	_Acceleration			: LREAL := 20000;
-	_Deceleration			: LREAL := 20000;
-	_Jerk					: LREAL := 200000;
-	_NumberOfRotations		: UDINT := 5;
+	_Velocity					: LREAL := 2000;
+	_Acceleration				: LREAL := 20000;
+	_Deceleration				: LREAL := 20000;
+	_Jerk						: LREAL := 200000;
+	_NumberOfRotations			: UDINT := 5;
 	
 END_VAR
 VAR CONSTANT
 	
 	// Number of movers
-	_MoverCount				: UINT := 2;
+	_MoverCount					: UINT := 2;
+	_TrackCount					: UINT := 3;
 
 END_VAR]]></Declaration>
     <Implementation>
@@ -76,6 +84,7 @@ END_VAR]]></Declaration>
       </NWL>
     </Implementation>
     <Folder Name="Methods" Id="{2d820bc0-a9a0-4644-859d-9983f3034247}">
+      <Folder Name="Collision Avoidance" Id="{eecc4bac-6acf-406a-a217-b8a90f1c3216}" />
       <Folder Name="Movements 2-Tile" Id="{564f56f8-bb5c-4eca-8a56-c64a7594c15d}" />
       <Folder Name="Movements General" Id="{aee95a18-140d-4ee9-ac40-69e7d69f9acf}" />
       <Folder Name="Power, Updates and Errors" Id="{c5ba77ca-a5ce-43bc-a81f-9b9628e1d54c}" />
@@ -85,6 +94,120 @@ END_VAR]]></Declaration>
       <Folder Name="Mover Attributes" Id="{55d9eb81-aa28-4943-ab68-008b0241e025}" />
       <Folder Name="Mover State" Id="{aacac47d-b1ac-450f-aed7-1cf5f67c5c41}" />
     </Folder>
+    <Method Name="CaAddAllMoversToGroup" Id="{6307ad6c-536a-486b-9bc7-5654c14271b5}" FolderPath="Methods\Collision Avoidance\">
+      <Declaration><![CDATA[METHOD CaAddAllMoversToGroup : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Enable planar group and add all movers
+
+CASE _LocalState OF
+	
+	0:
+		_LocalState := 1;
+
+	1:
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].AddToGroup
+			(
+				commandFeedback := _PlanarMoverFeedback[_i],
+				group := _PlanarGroup
+			);
+		END_FOR
+		_LocalState := 2;
+	
+	2:
+		_CommandDone := TRUE;
+		FOR _i := 1 TO _MoverCount DO
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
+				_CommandDone := FALSE;
+				_InternalCounter := _InternalCounter + 1;
+			END_IF
+		END_FOR
+		
+		IF _InternalCounter >= 10000 THEN
+			_LocalState := 0;
+			_InternalCounter := 0;
+			CaAddAllMoversToGroup := FALSE;
+		END_IF
+		
+		IF _CommandDone THEN
+			_CommandDone := FALSE;
+			_InternalCounter := 0;
+			_LocalState := 3;
+		END_IF
+	
+	3:
+		_LocalState := 0;
+		CaAddAllMoversToGroup := TRUE;
+		
+END_CASE		
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CaDisable" Id="{3ab8dc0d-fff4-4533-b410-8fc93dfb2b62}" FolderPath="Methods\Collision Avoidance\">
+      <Declaration><![CDATA[METHOD CaDisable : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// Enable planar group and add all movers
+
+CASE _LocalState OF
+	
+	0:
+		_LocalState := 1;
+
+	1:
+		_PlanarGroup.Disable(commandFeedback := _PlanarGroupFeedback);
+		_LocalState := 2;
+	
+	2:
+		IF _PlanarGroupFeedback.Done THEN
+			_LocalState := 3;
+		END_IF
+	
+	3:
+		_LocalState := 0;
+		CaDisable := TRUE;
+		
+END_CASE		
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CaEnable" Id="{085262b9-e414-4a09-b997-7223676ed1df}" FolderPath="Methods\Collision Avoidance\">
+      <Declaration><![CDATA[METHOD CaEnable : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// Enable planar group and add all movers
+
+CASE _LocalState OF
+	
+	0:
+		_LocalState := 1;
+
+	1:
+		_PlanarGroup.Enable(commandFeedback := _PlanarGroupFeedback);
+		_LocalState := 2;
+	
+	2:
+		IF _PlanarGroupFeedback.Done THEN
+			_LocalState := 3;
+		END_IF
+	
+	3:
+		_LocalState := 0;
+		CaEnable := TRUE;
+		
+END_CASE		
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="CyclicUpdate" Id="{c7e9e683-b8ab-4217-b047-2e15baa6471c}" FolderPath="Methods\Power, Updates and Errors\">
       <Declaration><![CDATA[METHOD CyclicUpdate : BOOL
 VAR_INPUT
@@ -92,37 +215,51 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+
 // Update method needs to be called cyclically
+
+
+_PlanarGroup.Update();
+_PlanarGroupFeedback.Update();
+
 
 FOR _i := 1 TO _MoverCount DO
 	
+
 	_PlanarMover[_i].Update();
-	_PlanarFeedback[_i].Update();
+	_PlanarMoverFeedback[_i].Update();
+		
 	
 	IF _PlanarMover[_i].MCTOPLC.STD.State = 3 THEN
 		_Enabled[_i] := TRUE;
 	ELSE
 		_Enabled[_i] := FALSE;
 	END_IF
-
-	_Error[_i] := _PlanarFeedback[_i].Error;
-	_Busy[_i] := _PlanarFeedback[_i].Busy;
-	_Done[_i] := _PlanarFeedback[_i].Done;
 	
-	_ErrorCode[_i] := _PlanarFeedback[_i].ErrorId;
-	IF _PlanarFeedback[_i].ErrorId <> 0 THEN
-		_ErrorCodePrevious[_i] := _PlanarFeedback[_i].ErrorId;
+
+	_Error[_i] := _PlanarMoverFeedback[_i].Error;
+	_Busy[_i] := _PlanarMoverFeedback[_i].Busy;
+	_Done[_i] := _PlanarMoverFeedback[_i].Done;
+	_ErrorCode[_i] := _PlanarMoverFeedback[_i].ErrorId;
+	IF _PlanarMoverFeedback[_i].ErrorId <> 0 THEN
+		_ErrorCodePrevious[_i] := _PlanarMoverFeedback[_i].ErrorId;
 	END_IF
+	
 	
 	_MoveParameters[_i].Options.useOrientation := TRUE;
 	_MoveParameters[_i].Constraints.SetValuesVADJ(V := _Velocity, A := _Acceleration, D := _Deceleration, J := _Jerk);
 	_MoveParameters[_i].rotateOptions.additionalTurns := _NumberOfRotations;
+	
+	
+	_MoveParameters[_i].Constraints
+	
 	
 	IF (_i MOD 2 <> 0) THEN
 		_MoveParameters[_i].rotateOptions.direction := 1;
 	ELSE
 		_MoveParameters[_i].rotateOptions.direction := 3;
 	END_IF
+	
 	
 END_FOR]]></ST>
       </Implementation>
@@ -146,7 +283,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 2.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -156,7 +293,7 @@ CASE _LocalState OF
 	2:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -188,12 +325,14 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+
 // Error detection method
 
 FOR _i := 1 TO _MoverCount DO
 	IF _PlanarMover[_i].Error THEN
 		_Error[_i] := TRUE;
 		_LocalState := 0;
+		_InternalCounter := 0;
 		DetectErrors := TRUE;
 	END_IF
 END_FOR]]></ST>
@@ -206,20 +345,21 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+
 // Disable movers
 
 CASE _LocalState OF
 	
 	0:
 		FOR _i := 1 TO _MoverCount DO
-			_PlanarMover[_i].Disable(_PlanarFeedback[_i]);
+			_PlanarMover[_i].Disable(_PlanarMoverFeedback[_i]);
 		END_FOR
 		_LocalState := 1;
 	
 	1:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -251,20 +391,21 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+
 // Enable movers
 
 CASE _LocalState OF
 	
 	0:
 		FOR _i := 1 TO _MoverCount DO
-			_PlanarMover[_i].Enable(_PlanarFeedback[_i]);
+			_PlanarMover[_i].Enable(_PlanarMoverFeedback[_i]);
 		END_FOR
 		_LocalState := 1;
 	
 	1:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -296,219 +437,218 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-// Movers move to edge of tiles and follow the perimeter, then move to home
+        <ST><![CDATA[// Movers move to edge of tiles and follow the perimeter, then move to home
 	
-	CASE _LocalState OF
-		
-		0:
-			_LocalState := 1;
+CASE _LocalState OF
 	
-		1:
-			_MoveParameters[1].targetPosition.x := 180;
-			_MoveParameters[1].targetPosition.y := 183;
-			_MoveParameters[2].targetPosition.x := 296;
-			_MoveParameters[2].targetPosition.y := 183;
-			_LocalState := 2;
-		
-		2:
-			FOR _i := 1 TO _MoverCount DO
-				_PlanarMover[_i].MoveToPosition
-				(
-					commandFeedback 	:= _PlanarFeedback[_i],
-					targetPosition 		:= _MoveParameters[_i].targetPosition,
-					constraint 			:= _MoveParameters[_i].Constraints,
-					options 			:= _MoveParameters[_i].Options
-				);
-			END_FOR
-			_LocalState := 3;
-		
-		3:
-			_CommandDone := TRUE;
-			FOR _i := 1 TO _MoverCount DO
-				IF NOT(_PlanarFeedback[_i].Done) THEN
-					_CommandDone := FALSE;
-					_InternalCounter := _InternalCounter + 1;
-				END_IF
-			END_FOR
-			
-			IF _InternalCounter >= 10000 THEN
-				_LocalState := 0;
-				_InternalCounter := 0;
-				FollowTileEdge := FALSE;
-			END_IF
-			
-			IF _CommandDone THEN
-				_CommandDone := FALSE;
-				_InternalCounter := 0;
-				_LocalState := 4;
-			END_IF
+	0:
+		_LocalState := 1;
+
+	1:
+		_MoveParameters[1].targetPosition.x := 180;
+		_MoveParameters[1].targetPosition.y := 183;
+		_MoveParameters[2].targetPosition.x := 296;
+		_MoveParameters[2].targetPosition.y := 183;
+		_LocalState := 2;
 	
-		4:
-			_MoveParameters[1].targetPosition.x := 57;
-			_MoveParameters[1].targetPosition.y := 183;
-			_MoveParameters[2].targetPosition.x := 423;
-			_MoveParameters[2].targetPosition.y := 183;
-			_LocalState := 5;
-		
-		5:
-			FOR _i := 1 TO _MoverCount DO
-				_PlanarMover[_i].MoveToPosition
-				(
-					commandFeedback 	:= _PlanarFeedback[_i],
-					targetPosition 		:= _MoveParameters[_i].targetPosition,
-					constraint 			:= _MoveParameters[_i].Constraints,
-					options 			:= _MoveParameters[_i].Options
-				);
-			END_FOR
-			_LocalState := 6;
-		
-		6:
-			_CommandDone := TRUE;
-			FOR _i := 1 TO _MoverCount DO
-				IF NOT(_PlanarFeedback[_i].Done) THEN
-					_CommandDone := FALSE;
-					_InternalCounter := _InternalCounter + 1;
-				END_IF
-			END_FOR
-			
-			IF _InternalCounter >= 10000 THEN
-				_LocalState := 0;
-				_InternalCounter := 0;
-				FollowTileEdge := FALSE;
-			END_IF
-			
-			IF _CommandDone THEN
+	2:
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].MoveToPosition
+			(
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
+				targetPosition 		:= _MoveParameters[_i].targetPosition,
+				constraint 			:= _MoveParameters[_i].Constraints,
+				options 			:= _MoveParameters[_i].Options
+			);
+		END_FOR
+		_LocalState := 3;
+	
+	3:
+		_CommandDone := TRUE;
+		FOR _i := 1 TO _MoverCount DO
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
-				_InternalCounter := 0;
-				_LocalState := 7;
+				_InternalCounter := _InternalCounter + 1;
 			END_IF
-			
-		7:
-			_MoveParameters[1].targetPosition.x := 57;
-			_MoveParameters[1].targetPosition.y := 57;
-			_MoveParameters[2].targetPosition.x := 423;
-			_MoveParameters[2].targetPosition.y := 57;
-			_LocalState := 8;
+		END_FOR
 		
-		8:
-			FOR _i := 1 TO _MoverCount DO
-				_PlanarMover[_i].MoveToPosition
-				(
-					commandFeedback 	:= _PlanarFeedback[_i],
-					targetPosition 		:= _MoveParameters[_i].targetPosition,
-					constraint 			:= _MoveParameters[_i].Constraints,
-					options 			:= _MoveParameters[_i].Options
-				);
-			END_FOR
-			_LocalState := 9;
-		
-		9:
-			_CommandDone := TRUE;
-			FOR _i := 1 TO _MoverCount DO
-				IF NOT(_PlanarFeedback[_i].Done) THEN
-					_CommandDone := FALSE;
-					_InternalCounter := _InternalCounter + 1;
-				END_IF
-			END_FOR
-			
-			IF _InternalCounter >= 10000 THEN
-				_LocalState := 0;
-				_InternalCounter := 0;
-				FollowTileEdge := FALSE;
-			END_IF
-			
-			IF _CommandDone THEN
-				_CommandDone := FALSE;
-				_InternalCounter := 0;
-				_LocalState := 10;
-			END_IF
-			
-		10:
-			_MoveParameters[1].targetPosition.x := 180;
-			_MoveParameters[1].targetPosition.y := 57;
-			_MoveParameters[2].targetPosition.x := 296;
-			_MoveParameters[2].targetPosition.y := 57;
-			_LocalState := 11;
-		
-		11:
-			FOR _i := 1 TO _MoverCount DO
-				_PlanarMover[_i].MoveToPosition
-				(
-					commandFeedback 	:= _PlanarFeedback[_i],
-					targetPosition 		:= _MoveParameters[_i].targetPosition,
-					constraint 			:= _MoveParameters[_i].Constraints,
-					options 			:= _MoveParameters[_i].Options
-				);
-			END_FOR
-			_LocalState := 12;
-		
-		12:
-			_CommandDone := TRUE;
-			FOR _i := 1 TO _MoverCount DO
-				IF NOT(_PlanarFeedback[_i].Done) THEN
-					_CommandDone := FALSE;
-					_InternalCounter := _InternalCounter + 1;
-				END_IF
-			END_FOR
-			
-			IF _InternalCounter >= 10000 THEN
-				_LocalState := 0;
-				_InternalCounter := 0;
-				FollowTileEdge := FALSE;
-			END_IF
-			
-			IF _CommandDone THEN
-				_CommandDone := FALSE;
-				_InternalCounter := 0;
-				_LocalState := 13;
-			END_IF
-			
-		13:
-			_MoveParameters[1].targetPosition.x := 120;
-			_MoveParameters[1].targetPosition.y := 120;
-			_MoveParameters[2].targetPosition.x := 360;
-			_MoveParameters[2].targetPosition.y := 120;
-			_LocalState := 14;
-		
-		14:
-			FOR _i := 1 TO _MoverCount DO
-				_PlanarMover[_i].MoveToPosition
-				(
-					commandFeedback 	:= _PlanarFeedback[_i],
-					targetPosition 		:= _MoveParameters[_i].targetPosition,
-					constraint 			:= _MoveParameters[_i].Constraints,
-					options 			:= _MoveParameters[_i].Options
-				);
-			END_FOR
-			_LocalState := 15;
-		
-		15:
-			_CommandDone := TRUE;
-			FOR _i := 1 TO _MoverCount DO
-				IF NOT(_PlanarFeedback[_i].Done) THEN
-					_CommandDone := FALSE;
-					_InternalCounter := _InternalCounter + 1;
-				END_IF
-			END_FOR
-			
-			IF _InternalCounter >= 10000 THEN
-				_LocalState := 0;
-				_InternalCounter := 0;
-				FollowTileEdge := FALSE;
-			END_IF
-			
-			IF _CommandDone THEN
-				_CommandDone := FALSE;
-				_InternalCounter := 0;
-				_LocalState := 16;
-			END_IF
-			
-		16:
-			FollowTileEdge := TRUE;
+		IF _InternalCounter >= 10000 THEN
 			_LocalState := 0;
-			
-	END_CASE		
+			_InternalCounter := 0;
+			FollowTileEdge := FALSE;
+		END_IF
+		
+		IF _CommandDone THEN
+			_CommandDone := FALSE;
+			_InternalCounter := 0;
+			_LocalState := 4;
+		END_IF
+
+	4:
+		_MoveParameters[1].targetPosition.x := 57;
+		_MoveParameters[1].targetPosition.y := 183;
+		_MoveParameters[2].targetPosition.x := 423;
+		_MoveParameters[2].targetPosition.y := 183;
+		_LocalState := 5;
+	
+	5:
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].MoveToPosition
+			(
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
+				targetPosition 		:= _MoveParameters[_i].targetPosition,
+				constraint 			:= _MoveParameters[_i].Constraints,
+				options 			:= _MoveParameters[_i].Options
+			);
+		END_FOR
+		_LocalState := 6;
+	
+	6:
+		_CommandDone := TRUE;
+		FOR _i := 1 TO _MoverCount DO
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
+				_CommandDone := FALSE;
+				_InternalCounter := _InternalCounter + 1;
+			END_IF
+		END_FOR
+		
+		IF _InternalCounter >= 10000 THEN
+			_LocalState := 0;
+			_InternalCounter := 0;
+			FollowTileEdge := FALSE;
+		END_IF
+		
+		IF _CommandDone THEN
+			_CommandDone := FALSE;
+			_InternalCounter := 0;
+			_LocalState := 7;
+		END_IF
+		
+	7:
+		_MoveParameters[1].targetPosition.x := 57;
+		_MoveParameters[1].targetPosition.y := 57;
+		_MoveParameters[2].targetPosition.x := 423;
+		_MoveParameters[2].targetPosition.y := 57;
+		_LocalState := 8;
+	
+	8:
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].MoveToPosition
+			(
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
+				targetPosition 		:= _MoveParameters[_i].targetPosition,
+				constraint 			:= _MoveParameters[_i].Constraints,
+				options 			:= _MoveParameters[_i].Options
+			);
+		END_FOR
+		_LocalState := 9;
+	
+	9:
+		_CommandDone := TRUE;
+		FOR _i := 1 TO _MoverCount DO
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
+				_CommandDone := FALSE;
+				_InternalCounter := _InternalCounter + 1;
+			END_IF
+		END_FOR
+		
+		IF _InternalCounter >= 10000 THEN
+			_LocalState := 0;
+			_InternalCounter := 0;
+			FollowTileEdge := FALSE;
+		END_IF
+		
+		IF _CommandDone THEN
+			_CommandDone := FALSE;
+			_InternalCounter := 0;
+			_LocalState := 10;
+		END_IF
+		
+	10:
+		_MoveParameters[1].targetPosition.x := 180;
+		_MoveParameters[1].targetPosition.y := 57;
+		_MoveParameters[2].targetPosition.x := 296;
+		_MoveParameters[2].targetPosition.y := 57;
+		_LocalState := 11;
+	
+	11:
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].MoveToPosition
+			(
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
+				targetPosition 		:= _MoveParameters[_i].targetPosition,
+				constraint 			:= _MoveParameters[_i].Constraints,
+				options 			:= _MoveParameters[_i].Options
+			);
+		END_FOR
+		_LocalState := 12;
+	
+	12:
+		_CommandDone := TRUE;
+		FOR _i := 1 TO _MoverCount DO
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
+				_CommandDone := FALSE;
+				_InternalCounter := _InternalCounter + 1;
+			END_IF
+		END_FOR
+		
+		IF _InternalCounter >= 10000 THEN
+			_LocalState := 0;
+			_InternalCounter := 0;
+			FollowTileEdge := FALSE;
+		END_IF
+		
+		IF _CommandDone THEN
+			_CommandDone := FALSE;
+			_InternalCounter := 0;
+			_LocalState := 13;
+		END_IF
+		
+	13:
+		_MoveParameters[1].targetPosition.x := 120;
+		_MoveParameters[1].targetPosition.y := 120;
+		_MoveParameters[2].targetPosition.x := 360;
+		_MoveParameters[2].targetPosition.y := 120;
+		_LocalState := 14;
+	
+	14:
+		FOR _i := 1 TO _MoverCount DO
+			_PlanarMover[_i].MoveToPosition
+			(
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
+				targetPosition 		:= _MoveParameters[_i].targetPosition,
+				constraint 			:= _MoveParameters[_i].Constraints,
+				options 			:= _MoveParameters[_i].Options
+			);
+		END_FOR
+		_LocalState := 15;
+	
+	15:
+		_CommandDone := TRUE;
+		FOR _i := 1 TO _MoverCount DO
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
+				_CommandDone := FALSE;
+				_InternalCounter := _InternalCounter + 1;
+			END_IF
+		END_FOR
+		
+		IF _InternalCounter >= 10000 THEN
+			_LocalState := 0;
+			_InternalCounter := 0;
+			FollowTileEdge := FALSE;
+		END_IF
+		
+		IF _CommandDone THEN
+			_CommandDone := FALSE;
+			_InternalCounter := 0;
+			_LocalState := 16;
+		END_IF
+		
+	16:
+		FollowTileEdge := TRUE;
+		_LocalState := 0;
+		
+END_CASE		
 ]]></ST>
       </Implementation>
     </Method>
@@ -537,7 +677,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveToPosition
 			(
-				commandFeedback 	:= _PlanarFeedback[_i],
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
 				targetPosition 		:= _MoveParameters[_i].targetPosition,
 				constraint 			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].Options
@@ -548,7 +688,7 @@ CASE _LocalState OF
 	3:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -610,7 +750,7 @@ END_IF]]></ST>
       </Set>
     </Property>
     <Property Name="MoverBusy" Id="{c11cbac8-4b91-4966-89dc-ba7f5f7a86e5}" FolderPath="Properties\Mover State\">
-      <Declaration><![CDATA[PROPERTY MoverBusy : ARRAY[1.._MoverCount] OF BOOL]]></Declaration>
+      <Declaration><![CDATA[PROPERTY MoverBusy : ARRAY [1.._MoverCount] OF BOOL]]></Declaration>
       <Get Name="Get" Id="{11aeb304-4070-4226-af8d-d2d079a16cb2}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -690,7 +830,7 @@ END_VAR
       </Set>
     </Property>
     <Property Name="MoverError" Id="{c577a3a6-2f4c-4698-be42-7d3dcfd67637}" FolderPath="Properties\Mover State\">
-      <Declaration><![CDATA[PROPERTY MoverError : ARRAY[1.._MoverCount] OF BOOL]]></Declaration>
+      <Declaration><![CDATA[PROPERTY MoverError : ARRAY [1.._MoverCount] OF BOOL]]></Declaration>
       <Get Name="Get" Id="{3da9024b-2595-450f-b564-b70a3f12a472}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -765,8 +905,8 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IF (MoverNumberOfRotations <= 0) THEN
-	_NumberOfRotations := 1;
+          <ST><![CDATA[IF (MoverNumberOfRotations < 0) THEN
+	_NumberOfRotations := 0;
 ELSE
 	_NumberOfRotations := MoverNumberOfRotations;
 END_IF]]></ST>
@@ -809,14 +949,14 @@ CASE _LocalState OF
 	
 	0: 
 		FOR _i := 1 TO _MoverCount DO
-			_PlanarMover[_i].Reset(_PlanarFeedback[_i]);
+			_PlanarMover[_i].Reset(_PlanarMoverFeedback[_i]);
 		END_FOR
 		_LocalState := 1;
 	
 	1:	
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -862,7 +1002,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveC
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 0,
 				constraint			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].rotateOptions
@@ -873,7 +1013,7 @@ CASE _LocalState OF
 	2:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -923,7 +1063,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveToPosition
 			(
-				commandFeedback 	:= _PlanarFeedback[_i],
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
 				targetPosition 		:= _MoveParameters[_i].targetPosition,
 				constraint 			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].Options
@@ -934,7 +1074,7 @@ CASE _LocalState OF
 	3:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -963,7 +1103,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveToPosition
 			(
-				commandFeedback 	:= _PlanarFeedback[_i],
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
 				targetPosition 		:= _MoveParameters[_i].targetPosition,
 				constraint 			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].Options
@@ -974,7 +1114,7 @@ CASE _LocalState OF
 	6:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1003,7 +1143,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveToPosition
 			(
-				commandFeedback 	:= _PlanarFeedback[_i],
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
 				targetPosition 		:= _MoveParameters[_i].targetPosition,
 				constraint 			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].Options
@@ -1014,7 +1154,7 @@ CASE _LocalState OF
 	9:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1043,7 +1183,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveToPosition
 			(
-				commandFeedback 	:= _PlanarFeedback[_i],
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
 				targetPosition 		:= _MoveParameters[_i].targetPosition,
 				constraint 			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].Options
@@ -1054,7 +1194,7 @@ CASE _LocalState OF
 	12:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1083,7 +1223,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveToPosition
 			(
-				commandFeedback 	:= _PlanarFeedback[_i],
+				commandFeedback 	:= _PlanarMoverFeedback[_i],
 				targetPosition 		:= _MoveParameters[_i].targetPosition,
 				constraint 			:= _MoveParameters[_i].Constraints,
 				options 			:= _MoveParameters[_i].Options
@@ -1094,7 +1234,7 @@ CASE _LocalState OF
 	15:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1136,7 +1276,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 5.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1146,7 +1286,7 @@ CASE _LocalState OF
 	2:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1169,7 +1309,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveA
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 4.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1179,7 +1319,7 @@ CASE _LocalState OF
 	4:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1201,7 +1341,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveA
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= -4.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1211,7 +1351,7 @@ CASE _LocalState OF
 	6:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1233,7 +1373,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveA
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 0.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1243,7 +1383,7 @@ CASE _LocalState OF
 	8:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1265,7 +1405,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveB
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 4.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1275,7 +1415,7 @@ CASE _LocalState OF
 	10:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1297,7 +1437,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveB
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= -4.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1307,7 +1447,7 @@ CASE _LocalState OF
 	12:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1329,7 +1469,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveB
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 0.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1339,7 +1479,7 @@ CASE _LocalState OF
 	14:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1361,7 +1501,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 2.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1371,7 +1511,7 @@ CASE _LocalState OF
 	16:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1415,7 +1555,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 5.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1425,7 +1565,7 @@ CASE _LocalState OF
 	2:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1447,7 +1587,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 2.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1457,7 +1597,7 @@ CASE _LocalState OF
 	4:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1479,7 +1619,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 5.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1489,7 +1629,7 @@ CASE _LocalState OF
 	6:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1511,7 +1651,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 2.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1521,7 +1661,7 @@ CASE _LocalState OF
 	8:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1543,7 +1683,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 5.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1553,7 +1693,7 @@ CASE _LocalState OF
 	10:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1575,7 +1715,7 @@ CASE _LocalState OF
 		FOR _i := 1 TO _MoverCount DO
 			_PlanarMover[_i].MoveZ
 			(	
-				commandFeedback		:= _PlanarFeedback[_i],
+				commandFeedback		:= _PlanarMoverFeedback[_i],
 				targetPosition		:= 2.0,
 				constraint			:= _MoveParameters[_i].Constraints
 			);
@@ -1585,7 +1725,7 @@ CASE _LocalState OF
 	12:
 		_CommandDone := TRUE;
 		FOR _i := 1 TO _MoverCount DO
-			IF NOT(_PlanarFeedback[_i].Done) THEN
+			IF NOT(_PlanarMoverFeedback[_i].Done) THEN
 				_CommandDone := FALSE;
 				_InternalCounter := _InternalCounter + 1;
 			END_IF
@@ -1610,26 +1750,72 @@ CASE _LocalState OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
+    <LineIds Name="xPlanarControl.CaAddAllMoversToGroup">
+      <LineId Id="31" Count="8" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="54" Count="3" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="41" Count="1" />
+      <LineId Id="59" Count="5" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="67" Count="9" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="46" Count="5" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.CaDisable">
+      <LineId Id="6" Count="21" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="xPlanarControl.CaEnable">
+      <LineId Id="6" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="6" />
+      <LineId Id="18" Count="3" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="219" Count="1" />
+      <LineId Id="32" Count="2" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="217" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
     <LineIds Name="xPlanarControl.CyclicUpdate">
+      <LineId Id="81" Count="0" />
       <LineId Id="42" Count="1" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="79" Count="0" />
       <LineId Id="6" Count="0" />
       <LineId Id="5" Count="0" />
       <LineId Id="28" Count="0" />
+      <LineId Id="78" Count="0" />
       <LineId Id="7" Count="0" />
       <LineId Id="9" Count="0" />
+      <LineId Id="85" Count="0" />
       <LineId Id="21" Count="0" />
       <LineId Id="17" Count="3" />
       <LineId Id="16" Count="0" />
+      <LineId Id="75" Count="0" />
       <LineId Id="24" Count="1" />
       <LineId Id="27" Count="0" />
       <LineId Id="23" Count="0" />
-      <LineId Id="60" Count="1" />
+      <LineId Id="61" Count="0" />
       <LineId Id="63" Count="2" />
       <LineId Id="47" Count="0" />
+      <LineId Id="76" Count="0" />
       <LineId Id="49" Count="3" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="86" Count="0" />
       <LineId Id="54" Count="1" />
       <LineId Id="58" Count="1" />
       <LineId Id="56" Count="0" />
+      <LineId Id="77" Count="0" />
       <LineId Id="53" Count="0" />
       <LineId Id="8" Count="0" />
     </LineIds>
@@ -1644,17 +1830,20 @@ END_CASE]]></ST>
       <LineId Id="12" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.DetectErrors">
+      <LineId Id="62" Count="0" />
       <LineId Id="53" Count="1" />
       <LineId Id="47" Count="0" />
       <LineId Id="30" Count="0" />
       <LineId Id="33" Count="0" />
       <LineId Id="35" Count="0" />
       <LineId Id="58" Count="0" />
+      <LineId Id="63" Count="0" />
       <LineId Id="40" Count="0" />
       <LineId Id="36" Count="0" />
       <LineId Id="34" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.DisableMovers">
+      <LineId Id="152" Count="0" />
       <LineId Id="147" Count="1" />
       <LineId Id="142" Count="0" />
       <LineId Id="109" Count="2" />
@@ -1666,6 +1855,7 @@ END_CASE]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.EnableMovers">
+      <LineId Id="101" Count="0" />
       <LineId Id="96" Count="1" />
       <LineId Id="51" Count="0" />
       <LineId Id="76" Count="0" />
@@ -1690,54 +1880,7 @@ END_CASE]]></ST>
       <LineId Id="8" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.FollowTileEdge">
-      <LineId Id="514" Count="1" />
-      <LineId Id="7" Count="2" />
-      <LineId Id="355" Count="0" />
-      <LineId Id="359" Count="0" />
-      <LineId Id="354" Count="0" />
-      <LineId Id="69" Count="0" />
-      <LineId Id="83" Count="0" />
-      <LineId Id="86" Count="1" />
-      <LineId Id="84" Count="0" />
-      <LineId Id="320" Count="0" />
-      <LineId Id="324" Count="1" />
-      <LineId Id="327" Count="1" />
-      <LineId Id="330" Count="4" />
-      <LineId Id="336" Count="0" />
-      <LineId Id="329" Count="0" />
-      <LineId Id="337" Count="2" />
-      <LineId Id="529" Count="17" />
-      <LineId Id="340" Count="0" />
-      <LineId Id="360" Count="0" />
-      <LineId Id="362" Count="0" />
-      <LineId Id="389" Count="2" />
-      <LineId Id="366" Count="15" />
-      <LineId Id="547" Count="17" />
-      <LineId Id="350" Count="0" />
-      <LineId Id="416" Count="0" />
-      <LineId Id="418" Count="0" />
-      <LineId Id="445" Count="2" />
-      <LineId Id="422" Count="15" />
-      <LineId Id="565" Count="17" />
-      <LineId Id="417" Count="0" />
-      <LineId Id="361" Count="0" />
-      <LineId Id="449" Count="0" />
-      <LineId Id="476" Count="2" />
-      <LineId Id="453" Count="15" />
-      <LineId Id="583" Count="17" />
-      <LineId Id="448" Count="0" />
-      <LineId Id="392" Count="0" />
-      <LineId Id="480" Count="0" />
-      <LineId Id="507" Count="2" />
-      <LineId Id="484" Count="15" />
-      <LineId Id="601" Count="17" />
-      <LineId Id="479" Count="0" />
-      <LineId Id="415" Count="0" />
-      <LineId Id="326" Count="0" />
-      <LineId Id="351" Count="0" />
-      <LineId Id="524" Count="0" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="352" Count="0" />
+      <LineId Id="622" Count="211" />
       <LineId Id="522" Count="0" />
     </LineIds>
     <LineIds Name="xPlanarControl.Home">

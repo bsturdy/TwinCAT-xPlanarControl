@@ -4702,15 +4702,6 @@ External Setpoint Generation:
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{064EA673-04B6-D0C1-CD14-82E56022843A}" IecBaseType="true" AutoDeleteType="true">ARRAY [1..4] OF BOOL</Name>
-			<BitSize>32</BitSize>
-			<BaseType GUID="{18071995-0000-0000-0000-000000000030}">BOOL</BaseType>
-			<ArrayInfo>
-				<LBound>1</LBound>
-				<Elements>4</Elements>
-			</ArrayInfo>
-		</DataType>
-		<DataType>
 			<Name GUID="{1500FFCE-0727-F0FF-6AEB-C3B7FBED5C6B}" Namespace="Tc3_Mc3PlanarMotion" IecLibraryType="true" AutoDeleteType="true">CDT_MCTOPLC_PLANAR_MOVER</Name>
 			<Comment><![CDATA[ Contains the information of the Planar Mover passed from MC to PLC. ]]></Comment>
 			<BitSize>320</BitSize>
@@ -4794,6 +4785,98 @@ External Setpoint Generation:
 					</Property>
 				</Properties>
 			</SubItem>
+		</DataType>
+		<DataType>
+			<Name GUID="{6E814ACD-1DD8-4E30-80DB-648BE0A7193D}" Namespace="MC">MC_PLANAR_TRACK_OPERATION_MODE</Name>
+			<Comment><![CDATA[Indicates the state of an enabled PlanarTrack, i.e. how PlanarMovers currently interact with the PlanarTrack.]]></Comment>
+			<BitSize>16</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000005}">UINT</BaseType>
+			<EnumInfo>
+				<Text><![CDATA[Invalid]]></Text>
+				<Enum>0</Enum>
+				<Comment><![CDATA[Indicates no or invalid information, e.g. no connection or component not yet ready.]]></Comment>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[Uninitialized]]></Text>
+				<Enum>201</Enum>
+				<Comment><![CDATA[Indicates that there is no finalized gemetric path yet.]]></Comment>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[Standing]]></Text>
+				<Enum>202</Enum>
+				<Comment><![CDATA[All PlanarMovers on the PlanarTrack are standing.]]></Comment>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[Configuring]]></Text>
+				<Enum>203</Enum>
+				<Comment><![CDATA[At least one PlanarMover is joining/leaving the track or crossing it in free movement mode.]]></Comment>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[Moving]]></Text>
+				<Enum>204</Enum>
+				<Comment><![CDATA[At least one PlanarMover on the PlanarTrack is busy (moving).]]></Comment>
+			</EnumInfo>
+			<Properties>
+				<Property>
+					<Name>plcAttribute_qualified_only</Name>
+				</Property>
+			</Properties>
+		</DataType>
+		<DataType>
+			<Name GUID="{5769ADF0-D6E6-40D9-B474-790A2A7F1D1F}" Namespace="MC" TcBaseType="true">CDT_MCTOPLC_PLANAR_TRACK</Name>
+			<Comment><![CDATA[CDT provides current planar track information.]]></Comment>
+			<BitSize>160</BitSize>
+			<SubItem>
+				<Name>TrackOID</Name>
+				<Type GUID="{18071995-0000-0000-0000-00000000000F}">OTCID</Type>
+				<Comment><![CDATA[Object id of the planar track.]]></Comment>
+				<BitSize>32</BitSize>
+				<BitOffs>0</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>GroupOID</Name>
+				<Type GUID="{18071995-0000-0000-0000-00000000000F}">OTCID</Type>
+				<Comment><![CDATA[Object id of the planar group the track is in.]]></Comment>
+				<BitSize>32</BitSize>
+				<BitOffs>32</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>State</Name>
+				<Type GUID="{6D2B99B2-A9F2-44AF-A298-4BB7A08AE294}" Namespace="MC">MC_PLANAR_STATE</Type>
+				<Comment><![CDATA[State of the planar track, e.g. disabled.]]></Comment>
+				<BitSize>16</BitSize>
+				<BitOffs>64</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>OperationMode</Name>
+				<Type GUID="{6E814ACD-1DD8-4E30-80DB-648BE0A7193D}" Namespace="MC">MC_PLANAR_TRACK_OPERATION_MODE</Type>
+				<Comment><![CDATA[Operation mode of the planar track, e.g. moving.]]></Comment>
+				<BitSize>16</BitSize>
+				<BitOffs>80</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>MoverCountOnTrack</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000008}">UDINT</Type>
+				<Comment><![CDATA[Number of movers coupled to this track.]]></Comment>
+				<BitSize>32</BitSize>
+				<BitOffs>96</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>MovingMoverCount</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000008}">UDINT</Type>
+				<Comment><![CDATA[Number of movers having a movement planned that includes this track.]]></Comment>
+				<BitSize>32</BitSize>
+				<BitOffs>128</BitOffs>
+			</SubItem>
+		</DataType>
+		<DataType>
+			<Name GUID="{064EA673-04B6-D0C1-CD14-82E56022843A}" IecBaseType="true" AutoDeleteType="true">ARRAY [1..4] OF BOOL</Name>
+			<BitSize>32</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000030}">BOOL</BaseType>
+			<ArrayInfo>
+				<LBound>1</LBound>
+				<Elements>4</Elements>
+			</ArrayInfo>
 		</DataType>
 		<DataType>
 			<Name GUID="{8CF7E034-6BBC-291C-E83F-2D2297581DBB}" Namespace="Tc3_Mc3PlanarMotion" IecLibraryType="true" AutoDeleteType="true">CDT_PLCTOMC_PLANAR_MOVER</Name>
@@ -16060,41 +16143,66 @@ External Setpoint Generation:
 		</Motion>
 		<Plc>
 			<Project GUID="{295A6CA2-001C-4D94-9EBD-8903C68C53F2}" Name="Test PLC 1" PrjFilePath="Test PLC 1\Test PLC 1.plcproj" TmcFilePath="Test PLC 1\Test PLC 1.tmc" ReloadTmc="true" AmsPort="852" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502040" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="Test PLC 1\Test PLC 1.tmc" TmcHash="{17D97AD1-9E25-AA37-2896-885CEEAE0DA5}">
+				<Instance Id="#x08502040" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="Test PLC 1\Test PLC 1.tmc" TmcHash="{4507A0AB-1D1B-4B38-2DA3-E47AFE7EA3B3}">
 					<Name>Test PLC 1 Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">
 						<Name>PlcTask Inputs</Name>
 						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarMover[1].MCTOPLC</Name>
+							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
+							<Type GUID="{1500FFCE-0727-F0FF-6AEB-C3B7FBED5C6B}" Namespace="Tc3_Mc3PlanarMotion">CDT_MCTOPLC_PLANAR_MOVER</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarMover[2].MCTOPLC</Name>
+							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
+							<Type GUID="{1500FFCE-0727-F0FF-6AEB-C3B7FBED5C6B}" Namespace="Tc3_Mc3PlanarMotion">CDT_MCTOPLC_PLANAR_MOVER</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarGroup.MCTOPLC_STD</Name>
+							<Comment><![CDATA[ Group data that is transferred from the Planar Group to this function block. ]]></Comment>
+							<Type GUID="{E06D295F-3D94-4B18-B587-C89D73DA41F4}" Namespace="MC">CDT_MCTOPLC_GROUP_PLANAR</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarEnvironment.MCTOPLC_STD</Name>
+							<Comment><![CDATA[ Environment data that is transferred from the Planar Environment to this function block. ]]></Comment>
+							<Type GUID="{79107B5F-AFEC-4E5A-AF95-460E7D782CE1}" Namespace="MC">CDT_MCTOPLC_PLANAR_ENVIRONMENT</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarTrack[1].MCTOPLC_STD</Name>
+							<Comment><![CDATA[ Track data that is transferred from the Planar Track to this function block. ]]></Comment>
+							<Type GUID="{5769ADF0-D6E6-40D9-B474-790A2A7F1D1F}" Namespace="MC">CDT_MCTOPLC_PLANAR_TRACK</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarTrack[2].MCTOPLC_STD</Name>
+							<Comment><![CDATA[ Track data that is transferred from the Planar Track to this function block. ]]></Comment>
+							<Type GUID="{5769ADF0-D6E6-40D9-B474-790A2A7F1D1F}" Namespace="MC">CDT_MCTOPLC_PLANAR_TRACK</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarTrack[3].MCTOPLC_STD</Name>
+							<Comment><![CDATA[ Track data that is transferred from the Planar Track to this function block. ]]></Comment>
+							<Type GUID="{5769ADF0-D6E6-40D9-B474-790A2A7F1D1F}" Namespace="MC">CDT_MCTOPLC_PLANAR_TRACK</Type>
+						</Var>
+						<Var>
 							<Name>IO.HardwareInput</Name>
 							<Type GUID="{064EA673-04B6-D0C1-CD14-82E56022843A}">ARRAY [1..4] OF BOOL</Type>
-						</Var>
-						<Var>
-							<Name>xPlanarProgram.Control._PlanarMover[1].MCTOPLC</Name>
-							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
-							<Type GUID="{1500FFCE-0727-F0FF-6AEB-C3B7FBED5C6B}" Namespace="Tc3_Mc3PlanarMotion">CDT_MCTOPLC_PLANAR_MOVER</Type>
-						</Var>
-						<Var>
-							<Name>xPlanarProgram.Control._PlanarMover[2].MCTOPLC</Name>
-							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
-							<Type GUID="{1500FFCE-0727-F0FF-6AEB-C3B7FBED5C6B}" Namespace="Tc3_Mc3PlanarMotion">CDT_MCTOPLC_PLANAR_MOVER</Type>
 						</Var>
 					</Vars>
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>PlcTask Outputs</Name>
 						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarMover[1].PLCTOMC</Name>
+							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
+							<Type GUID="{8CF7E034-6BBC-291C-E83F-2D2297581DBB}" Namespace="Tc3_Mc3PlanarMotion">CDT_PLCTOMC_PLANAR_MOVER</Type>
+						</Var>
+						<Var>
+							<Name>xPlanarProgram.xPlanar._PlanarMover[2].PLCTOMC</Name>
+							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
+							<Type GUID="{8CF7E034-6BBC-291C-E83F-2D2297581DBB}" Namespace="Tc3_Mc3PlanarMotion">CDT_PLCTOMC_PLANAR_MOVER</Type>
+						</Var>
+						<Var>
 							<Name>IO.HardwareOutput</Name>
 							<Type GUID="{064EA673-04B6-D0C1-CD14-82E56022843A}">ARRAY [1..4] OF BOOL</Type>
-						</Var>
-						<Var>
-							<Name>xPlanarProgram.Control._PlanarMover[1].PLCTOMC</Name>
-							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
-							<Type GUID="{8CF7E034-6BBC-291C-E83F-2D2297581DBB}" Namespace="Tc3_Mc3PlanarMotion">CDT_PLCTOMC_PLANAR_MOVER</Type>
-						</Var>
-						<Var>
-							<Name>xPlanarProgram.Control._PlanarMover[2].PLCTOMC</Name>
-							<Comment><![CDATA[ Mover data that is transferred from the Planar Mover to this function block. ]]></Comment>
-							<Type GUID="{8CF7E034-6BBC-291C-E83F-2D2297581DBB}" Namespace="Tc3_Mc3PlanarMotion">CDT_PLCTOMC_PLANAR_MOVER</Type>
 						</Var>
 					</Vars>
 					<Contexts>
@@ -18065,6 +18173,8 @@ External Setpoint Generation:
 	</Project>
 	<Mappings>
 		<MappingInfo Identifier="{02010030-2041-0850-1000-100540205008}" Id="#x02030050" Watchdog="14000000040000000400000004000000"/>
+		<MappingInfo Identifier="{02010030-2041-0850-1000-120540205008}" Id="#x02030040" Watchdog="14000000040000000400000004000000"/>
+		<MappingInfo Identifier="{02010030-2041-0850-2000-120540205008}" Id="#x02030020" Watchdog="14000000040000000400000004000000"/>
 		<MappingInfo Identifier="{02010050-0030-0201-7000-010120001105}" Id="#x02030030" Watchdog="20000000040000000400000004000000"/>
 		<MappingInfo Identifier="{020100A0-0030-0201-6000-010110001105}" Id="#x02030010" Watchdog="20000000040000000400000004000000"/>
 		<OwnerA Name="TIID^Device 4 (EtherCAT)">
@@ -18565,20 +18675,26 @@ External Setpoint Generation:
 				<Link VarA="PlcTask Outputs^IO.HardwareOutput[4]" VarB="Channel 4^Output"/>
 			</OwnerB>
 			<OwnerB Name="TINC^XPlanar MC Project^Axes^Mover4220_1">
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[1].MCTOPLC^ACT" VarB="McToPlc^ACT" Size="896"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[1].MCTOPLC^COORDMODE" VarB="McToPlc^COORDMODE" Size="80"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[1].MCTOPLC^SET" VarB="McToPlc^SET" Size="1280"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[1].MCTOPLC^SETONTRACK" VarB="McToPlc^SETONTRACK" Size="320"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[1].MCTOPLC^STD" VarB="McToPlc^STD" Size="160"/>
-				<Link VarA="PlcTask Outputs^xPlanarProgram.Control._PlanarMover[1].PLCTOMC^STD" VarB="PlcToMc^STD" Size="8"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[1].MCTOPLC^ACT" VarB="McToPlc^ACT" Size="896"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[1].MCTOPLC^COORDMODE" VarB="McToPlc^COORDMODE" Size="80"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[1].MCTOPLC^SET" VarB="McToPlc^SET" Size="1280"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[1].MCTOPLC^SETONTRACK" VarB="McToPlc^SETONTRACK" Size="320"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[1].MCTOPLC^STD" VarB="McToPlc^STD" Size="160"/>
+				<Link VarA="PlcTask Outputs^xPlanarProgram.xPlanar._PlanarMover[1].PLCTOMC^STD" VarB="PlcToMc^STD" Size="8"/>
 			</OwnerB>
 			<OwnerB Name="TINC^XPlanar MC Project^Axes^Mover4220_2">
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[2].MCTOPLC^ACT" VarB="McToPlc^ACT" Size="896"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[2].MCTOPLC^COORDMODE" VarB="McToPlc^COORDMODE" Size="80"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[2].MCTOPLC^SET" VarB="McToPlc^SET" Size="1280"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[2].MCTOPLC^SETONTRACK" VarB="McToPlc^SETONTRACK" Size="320"/>
-				<Link VarA="PlcTask Inputs^xPlanarProgram.Control._PlanarMover[2].MCTOPLC^STD" VarB="McToPlc^STD" Size="160"/>
-				<Link VarA="PlcTask Outputs^xPlanarProgram.Control._PlanarMover[2].PLCTOMC^STD" VarB="PlcToMc^STD" Size="8"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[2].MCTOPLC^ACT" VarB="McToPlc^ACT" Size="896"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[2].MCTOPLC^COORDMODE" VarB="McToPlc^COORDMODE" Size="80"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[2].MCTOPLC^SET" VarB="McToPlc^SET" Size="1280"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[2].MCTOPLC^SETONTRACK" VarB="McToPlc^SETONTRACK" Size="320"/>
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarMover[2].MCTOPLC^STD" VarB="McToPlc^STD" Size="160"/>
+				<Link VarA="PlcTask Outputs^xPlanarProgram.xPlanar._PlanarMover[2].PLCTOMC^STD" VarB="PlcToMc^STD" Size="8"/>
+			</OwnerB>
+			<OwnerB Name="TINC^XPlanar MC Project^Groups^Environment">
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarEnvironment.MCTOPLC_STD" VarB="McToPlc^STD"/>
+			</OwnerB>
+			<OwnerB Name="TINC^XPlanar MC Project^Groups^XPlanar">
+				<Link VarA="PlcTask Inputs^xPlanarProgram.xPlanar._PlanarGroup.MCTOPLC_STD" VarB="McToPlc^STD"/>
 			</OwnerB>
 		</OwnerA>
 		<OwnerA Name="TIRC^TcCOM Objects^XPlanar^Mover4220_1">

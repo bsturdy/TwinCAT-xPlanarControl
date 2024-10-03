@@ -3,18 +3,22 @@
   <POU Name="CoeToPlc" Id="{2ac5fc48-d93e-4f17-aaae-55a029d58a6e}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM CoeToPlc
 VAR
+	
 	CoeTrigger		: TON;
 	CoeTriggerTime	: TIME := T#50MS;
 	
 	TileTemp1		: FB_EcCoESdoRead;
 	Temperature1	: WORD;
+	
 	TileTemp2		: FB_EcCoESdoRead;
 	Temperature2	: WORD;
 			
 	FanSpeed1		: FB_EcCoESdoRead;
 	Speed1			: BYTE;
+	
 	FanSpeed2		: FB_EcCoESdoRead;
 	Speed2			: BYTE;
+	
 END_VAR
 ]]></Declaration>
     <Implementation>

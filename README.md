@@ -1,4 +1,4 @@
-# AxisControl
+# xPlanarControl
 
 ## What is this repository for? ##
 
