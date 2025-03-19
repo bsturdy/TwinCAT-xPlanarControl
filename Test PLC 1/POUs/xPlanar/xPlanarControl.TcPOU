@@ -101,7 +101,8 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// Enable planar group and add all movers
+        <ST><![CDATA[// WIP
+// Enable planar group and add all movers
 
 CASE _LocalState OF
 	
@@ -153,7 +154,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
+        <ST><![CDATA[// WIP
 // Enable planar group and add all movers
 
 CASE _LocalState OF
@@ -184,7 +185,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
+        <ST><![CDATA[// WIP
 // Enable planar group and add all movers
 
 CASE _LocalState OF
@@ -718,7 +719,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
+        <ST><![CDATA[// WIP
 // Measures the weight of an object on a tile
 
 ]]></ST>
@@ -1749,6 +1750,7 @@ END_CASE]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="xPlanarControl.CaAddAllMoversToGroup">
+      <LineId Id="80" Count="0" />
       <LineId Id="31" Count="8" />
       <LineId Id="52" Count="0" />
       <LineId Id="54" Count="3" />
