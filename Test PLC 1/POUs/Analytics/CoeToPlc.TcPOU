@@ -24,6 +24,14 @@ END_VAR
     <Implementation>
       <ST><![CDATA[
 
+// ======================================================================== //
+//																			//
+//			    xPlanar Temperature and Fan Speed Analytics					//
+//																			//
+// ======================================================================== //
+
+
+// Read parameters every x time
 CoeTrigger(IN := NOT(CoeTrigger.Q), PT := CoeTriggerTime);
 
 
@@ -72,8 +80,12 @@ FanSpeed2
 );]]></ST>
     </Implementation>
     <LineIds Name="CoeToPlc">
+      <LineId Id="98" Count="0" />
       <LineId Id="70" Count="0" />
+      <LineId Id="91" Count="3" />
       <LineId Id="20" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="95" Count="0" />
       <LineId Id="18" Count="0" />
       <LineId Id="71" Count="0" />
       <LineId Id="7" Count="9" />

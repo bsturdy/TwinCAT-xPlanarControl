@@ -13,7 +13,6 @@ VAR
 	_PlanarEnvironmentFeedback	: MC_PlanarFeedback;
 	_PlanarTrack				: ARRAY [1.._TrackCount] OF MC_PlanarTrack;
 	_PlanarTrackFeedback		: ARRAY [1.._TrackCount] OF MC_PlanarFeedback;
-	
 	_MoveParameters				: ARRAY [1.._MoverCount] OF ST_MoverParameters;
 	
 	// Internal states and counters
@@ -43,6 +42,8 @@ VAR CONSTANT
 	
 	// Number of movers
 	_MoverCount					: UINT := 2;
+	
+	// Unused in production
 	_TrackCount					: UINT := 3;
 
 END_VAR]]></Declaration>
@@ -249,9 +250,6 @@ FOR _i := 1 TO _MoverCount DO
 	_MoveParameters[_i].Options.useOrientation := TRUE;
 	_MoveParameters[_i].Constraints.SetValuesVADJ(V := _Velocity, A := _Acceleration, D := _Deceleration, J := _Jerk);
 	_MoveParameters[_i].rotateOptions.additionalTurns := _NumberOfRotations;
-	
-	
-	_MoveParameters[_i].Constraints
 	
 	
 	IF (_i MOD 2 <> 0) THEN
@@ -1807,9 +1805,7 @@ END_CASE]]></ST>
       <LineId Id="63" Count="2" />
       <LineId Id="47" Count="0" />
       <LineId Id="76" Count="0" />
-      <LineId Id="49" Count="3" />
-      <LineId Id="87" Count="0" />
-      <LineId Id="89" Count="0" />
+      <LineId Id="49" Count="2" />
       <LineId Id="88" Count="0" />
       <LineId Id="86" Count="0" />
       <LineId Id="54" Count="1" />

@@ -11,28 +11,56 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+
+// ======================================================================== //
+//																			//
+//					Beckhoff 2-Tile xPlanar Program							//
+//																			//
+//					Last Updated: 19-MAR-2025								//
+//					Last Programmer: Ben Sturdy								//
+//																			//
+// ======================================================================== //
+
+
 Running := Running + 1;
 
+
+// Time the system has been in run mode (in seconds)
 TimeAlive(IN := NOT TimeAlive.Q, PT := T#1S);
 IF TimeAlive.Q THEN
 	TimeAliveSeconds := TimeAliveSeconds + 1;
 END_IF
 
+
 xPlanarProgram();
 
+
 CoeToPlc();
+
+
 ]]></ST>
     </Implementation>
     <LineIds Name="MAIN">
+      <LineId Id="236" Count="0" />
+      <LineId Id="219" Count="3" />
+      <LineId Id="227" Count="2" />
+      <LineId Id="223" Count="0" />
       <LineId Id="181" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="224" Count="0" />
       <LineId Id="179" Count="0" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="235" Count="0" />
       <LineId Id="190" Count="0" />
       <LineId Id="189" Count="0" />
       <LineId Id="192" Count="2" />
+      <LineId Id="231" Count="0" />
       <LineId Id="211" Count="0" />
       <LineId Id="210" Count="0" />
+      <LineId Id="232" Count="0" />
       <LineId Id="182" Count="0" />
       <LineId Id="26" Count="0" />
+      <LineId Id="233" Count="1" />
       <LineId Id="202" Count="0" />
     </LineIds>
   </POU>

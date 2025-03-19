@@ -20,30 +20,25 @@ END_VAR
     <Implementation>
       <ST><![CDATA[
 
+// ======================================================================== //
+//																			//
+//			    	xPlanar Logic and LED / button control					//
+//																			//
+// ======================================================================== //
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ---------- LED logic
+// ------------------------------------------------------------------------ //
+// -------------------------- LED logic ----------------------------------- //
 
 ProgramTrigger(CLK := IO.HardwareInput[1]);
 LEDTimer(IN := (NOT(LEDTimer.Q)), PT := FlashTime);
 
 IF LEDTimer.Q THEN
 	IO.HardwareOutput[1] := NOT(IO.HardwareOutput[1]);
+	IO.HardwareOutput[2] := NOT(IO.HardwareOutput[2]);
+	IO.HardwareOutput[3] := NOT(IO.HardwareOutput[3]);
+	IO.HardwareOutput[4] := NOT(IO.HardwareOutput[4]);
 END_IF
 
 IF ProgramTrigger.Q THEN
@@ -51,14 +46,15 @@ IF ProgramTrigger.Q THEN
 END_IF
 
 IF (NOT(ProgramRunning) AND (State <> 0)) THEN
-	FlashTime := T#200MS;
+	FlashTime := T#100MS;
 ELSE
 	FlashTime := T#1000MS;
 END_IF
 
 
 
-// ---------- xPlanar control program
+// ------------------------------------------------------------------------ //
+// --------------------- xPlanar control program -------------------------- //
 
 xPlanar.CyclicUpdate();
 
@@ -80,10 +76,10 @@ CASE State OF
 			State := 2;
 		END_IF
 		
-	{66:}
+	66: // Testing
 		IF xPlanar.CaEnable() THEN
 			State := 2;
-		END_IF}
+		END_IF
 		
 	2:
 		IF ProgramRunning THEN
@@ -165,12 +161,20 @@ CASE State OF
 END_CASE]]></ST>
     </Implementation>
     <LineIds Name="xPlanarProgram">
-      <LineId Id="538" Count="5" />
-      <LineId Id="547" Count="10" />
-      <LineId Id="516" Count="1" />
-      <LineId Id="392" Count="13" />
+      <LineId Id="606" Count="0" />
+      <LineId Id="594" Count="0" />
+      <LineId Id="516" Count="0" />
+      <LineId Id="595" Count="3" />
+      <LineId Id="601" Count="1" />
+      <LineId Id="599" Count="1" />
+      <LineId Id="392" Count="6" />
+      <LineId Id="575" Count="2" />
+      <LineId Id="399" Count="6" />
       <LineId Id="407" Count="1" />
-      <LineId Id="410" Count="25" />
+      <LineId Id="410" Count="1" />
+      <LineId Id="603" Count="1" />
+      <LineId Id="412" Count="1" />
+      <LineId Id="415" Count="20" />
       <LineId Id="518" Count="4" />
       <LineId Id="436" Count="77" />
       <LineId Id="10" Count="0" />
